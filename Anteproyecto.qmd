@@ -1,0 +1,404 @@
+---
+title: ""
+author: ""
+date: ""
+format: 
+  pdf:
+    include-in-header:
+      - text: |
+          \usepackage{fancyhdr}
+          \usepackage{colortbl}
+          \definecolor{azulindice}{RGB}{70, 130, 180}
+          
+          \renewcommand{\contentsname}{\textcolor{azulindice}{Índice}}
+          
+          \pagestyle{fancy}
+          \fancyhf{}
+          \fancyhead[R]{\footnotesize Anteproyecto de tesina. Licenciatura en Estadística. Facultad de Ciencias Económicas y Estadística. UNR}
+          \fancyfoot[C]{\thepage}
+          \renewcommand{\headrulewidth}{0pt}
+    geometry: margin=2.5cm
+    mathspec: true
+lang: es
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+\begin{titlepage}
+\centering
+\vspace*{0.5cm}
+\includegraphics[width=0.4\textwidth]{logounr.png} \par
+\vspace{0.5cm}
+{\large UNIVERSIDAD NACIONAL DE ROSARIO \par}
+{\large Facultad de Ciencias Económicas y Estadística \par}
+\vspace{3cm}
+{\Huge\bfseries Imputación de Datos Faltantes en Series Temporales Univariadas: Evaluación Basada en Desempeño de Pronóstico \par}
+\vspace{1cm}
+{\Large\bfseries Anteproyecto de tesina \par}
+\vfill 
+\begin{flushright}
+\large
+\underline{Carrera}: Licenciatura en Estadística \\
+\underline{Alumno}: Sánchez Travella, Joaquín \\
+\underline{Directora}: Mag. Méndez, Fernanda
+\end{flushright}
+\vspace{1.5cm}
+{\large Año 2026 \par}
+\thispagestyle{empty}
+\end{titlepage}
+
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{2}
+
+\tableofcontents
+
+\newpage
+
+# 1. Introducción
+
+Las series temporales desempeñan un papel fundamental en el análisis y la predicción de fenómenos que evolucionan a lo largo del tiempo, siendo ampliamente utilizadas para analizar secuencias en áreas como la economía, la meteorología, la salud pública, la energía y los negocios. Sin embargo, es frecuente que las observaciones presenten valores faltantes. Estos pueden originarse por errores en dispositivos de medición, fallas en sensores, restricciones de privacidad o eventos imprevistos que interrumpen los procesos de recolección de datos.
+
+Los datos faltantes son uno de los problemas más frecuentes y frustrantes en el análisis de datos. En la práctica, una parte significativa del trabajo de análisis de datos se dedica a tareas de limpieza y preprocesamiento, dentro de las cuales el tratamiento de valores faltantes ocupa un lugar central. Un manejo inadecuado de los datos faltantes puede sesgar resultados, reducir la potencia estadística y conducir a conclusiones erróneas. Aunque una opción es eliminar registros incompletos, esto puede suponer la pérdida de información valiosa, sobre todo cuando el porcentaje de faltantes es considerable. Una alternativa más refinada es la imputación, es decir, reemplazar valores faltantes por estimaciones estadísticamente plausibles. Este procedimiento permite estimar valores plausibles para las observaciones ausentes y preservar, en la medida de lo posible, la estructura temporal de la serie. Además, muchos métodos de pronóstico requieren series completas para su correcta estimación, por lo que la existencia de observaciones faltantes hace necesaria la aplicación de técnicas de imputación antes del ajuste de los modelos.
+
+En el ámbito de las series temporales, existe una distinción técnica crucial entre los enfoques multivariados y univariados. Mientras que en las series multivariadas se pueden aprovechar las correlaciones y redundancias entre múltiples variables interrelacionadas para estimar datos ausentes, las series temporales univariadas presentan un desafío mayor al disponer de una única variable. Esto obliga a los algoritmos de imputación a centrarse exclusivamente en las dependencias temporales inherentes, tales como la autocorrelación y la estacionalidad, requiriendo técnicas especialmente adaptadas a la estructura temporal de los datos.
+
+Es importante destacar que no existe un enfoque de imputación universal que garantice el mejor desempeño en todas las circunstancias. La eficacia de cada método está íntimamente ligada a las características del conjunto de datos, la complejidad estructural de la serie y la extensión de los faltantes. Por este motivo, la motivación central de este trabajo surge al observar que la mayoría de los estudios previos revisados se centran en comparar la distribución de los datos imputados, sin profundizar en análisis posteriores de los mismos; en consecuencia, persiste un vacío en la literatura respecto al impacto que los distintos métodos de imputación pueden tener sobre el modelado y el desempeño de pronóstico de las series temporales.
+
+Esta tesina propone evaluar los métodos de imputación considerando principalmente el error de pronóstico posterior, enfoque denominado forecast-after-imputation. De esta manera, se busca derivar recomendaciones prácticas para la selección de técnicas cuando la meta es mejorar las predicciones futuras. Como antecedente directo, este trabajo continúa la línea de investigación desarrollada por Tamplin (2025), quien evaluó distintos métodos de imputación en series temporales univariadas mediante simulaciones de datos faltantes y métricas de precisión como RMSE, MAE y MAPE. La presente tesina propone extender ese enfoque incorporando un criterio adicional de evaluación basado en el desempeño de pronóstico posterior (forecast-after-imputation), con el objetivo de analizar cómo las distintas técnicas de imputación afectan la capacidad predictiva de los modelos de series temporales.
+
+\newpage
+
+# 2. Objetivos
+
+## 2.1 Objetivo general
+
+El objetivo principal de la tesina es analizar y comparar distintos métodos de imputación de datos faltantes en series temporales univariadas, considerando como criterio principal de evaluación el impacto de dichas técnicas sobre el desempeño de los modelos de pronóstico.
+
+## 2.2 Objetivos específicos
+
+* Revisar la literatura sobre métodos de imputación de datos faltantes en series temporales univariadas y su relación con tareas de pronóstico.
+* Implementar en R un conjunto representativo de métodos de imputación que abarque técnicas simples (media, mediana, moda), estructurales (descomposición estacional) y enfoques basados en modelos avanzados (Kalman, ARIMA).
+* Diseñar un esquema de simulación que contemple distintos mecanismos de datos faltantes (MCAR, MAR temporal y MNAR), así como diferentes patrones de ausencia (dispersos y en bloques) y niveles de pérdida de información.
+* Construir un pipeline de procesamiento reproducible que integre de forma secuencial la generación de faltantes, la aplicación de técnicas de imputación, el ajuste de modelos de series temporales y la generación de predicciones.
+* Comparar la eficacia de los métodos mediante el uso de métricas de error de imputación (RMSE, MAE y MAPE) en conjunto con métricas de desempeño de pronóstico para horizontes de tiempo de corto y mediano plazo (h=1, 3, 6 y 12).
+* Validar el desempeño de los métodos mediante su aplicación a series temporales reales.
+* Derivar recomendaciones prácticas fundamentadas en los resultados obtenidos, que permitan identificar qué técnicas de imputación resultan más adecuadas según la estructura de la serie y el objetivo específico de mejorar el forecasting.
+
+\newpage
+
+# 3. Metodología
+
+El presente trabajo adoptará un enfoque de simulación y análisis comparativo con el objetivo de evaluar el desempeño de distintos métodos de imputación en series temporales univariadas. En primer lugar, se trabajará con series temporales completas, las cuales servirán como referencia para generar artificialmente distintos escenarios de datos faltantes. Esto permitirá comparar los valores imputados con los valores reales y evaluar la precisión de cada método.
+
+A partir de las series completas, se introducirán valores faltantes de manera controlada según distintos mecanismos de ausencia de datos. Este procedimiento permitirá analizar cómo se comportan los diferentes métodos de imputación frente a diversas estructuras de datos faltantes y distintos niveles de pérdida de información.
+
+Posteriormente, se aplicarán distintos métodos de imputación comúnmente utilizados en el contexto de series temporales. Cada método será implementado sobre las series con datos faltantes generadas previamente, obteniendo así versiones imputadas de las series originales.
+
+Finalmente, se evaluará el desempeño de los métodos de imputación comparando los valores imputados con los valores originales conocidos. Para ello se utilizarán diferentes medidas de error y criterios de evaluación que permitan cuantificar la precisión de cada método. Este análisis permitirá identificar qué técnicas presentan mejor desempeño bajo diferentes escenarios de datos faltantes y características de las series temporales.
+
+## 3.1 Tipos de datos faltantes
+Hay varios tipos de observaciones faltantes:
+
+* Falta completamente al azar (Missing Completely at Random, MCAR). Los datos faltantes siguen un patrón aleatorio; la probabilidad de que una respuesta a una variable sea dato faltante es independiente tanto del valor de esta variable como del valor de otras variables del conjunto de datos. La ausencia de información no procede de ninguna variable presente en la matriz de datos, ya que la base de datos se interpreta como una matriz en donde los renglones son las unidades de observación y las columnas representan a las variables de interés. Hay que señalar que, en la práctica, la hipótesis de este supuesto no siempre es satisfactoria porque la falta de respuesta se asocia a características personales.
+
+* Falta al azar (Missing at Random, MAR). La probabilidad de que una respuesta sea dato faltante es independiente de los valores de la misma variable pero es dependiente de los valores de otras variables del conjunto de datos. En suma, la ausencia de datos está asociada a variables presentes en la matriz de datos. Por ejemplo, este supuesto, es usual en las encuestas de hogares que estudian el nivel de vida, donde la falta de respuesta en la variable ingreso en las familias con mayor renta está correlacionada con sus ingresos y por lo tanto no se cumple el supuesto. En cambio, cuando la omisión ocurre en la categoría ocupacional, la falta de información no necesariamente está correlacionada con el nivel de ingresos de las personas y por lo tanto sí se cumple el supuesto.
+
+* No falta al azar (Missing not at random, MNAR). La probabilidad de que una respuesta a una variable sea dato faltante es dependiente de los valores de la variable. Por ejemplo, en el estudio de las variables peso y edad; los sujetos con mayores valores de peso tienen un porcentaje de datos faltantes más elevado en esta variable para aquellos individuos con la misma edad. Este tipo de dato faltante también se denomina no ignorable.
+
+Para series temporales univariadas, el panorama de los mecanismos de datos faltantes es ligeramente diferente. A primera vista, solo hay una variable en los datos. Sin embargo, el tiempo (que se da implícitamente) debe tratarse como una variable al determinar el mecanismo de datos faltantes de un conjunto de datos. Otra diferencia radica en que los algoritmos de imputación de series temporales no necesitan basarse únicamente en covariables para la estimación de valores faltantes, sino que también pueden utilizar las características de las series temporales. Esto facilita considerablemente la estimación de valores faltantes para datos MCAR. Para la imputación de series temporales univariadas, MAR y MCAR son prácticamente iguales.
+
+En un escenario de datos faltantes completamente al azar (MCAR), los puntos de datos ausentes ocurren de manera aleatoria, lo que implica que la probabilidad de que falte una observación es independiente tanto del momento de la observación en la serie como del valor de la observación misma. Por otro lado, en el caso de datos faltantes que no faltan al azar (MNAR), la probabilidad de que falte una observación puede depender del momento en que se encuentra esa observación en la serie, así como del valor de la propia observación, y posiblemente de otras variables.
+
+La imputación de datos faltantes es más sencilla cuando estos ocurren completamente al azar (MCAR). Esto se debe a que en el caso de MNAR, las observaciones faltantes pueden formar fragmentos lo suficientemente grandes como para ocultar los componentes estructurales de las series temporales. Sin embargo, si la serie temporal presenta una estructura temporal bien definida, los métodos de imputación que aprovechan características como la estacionalidad, los ciclos y la autocorrelación pueden tener una ventaja sobre otros métodos más simples.
+
+La precisión de los métodos de imputación para datos faltantes en series temporales depende de varios factores, incluyendo la naturaleza de los datos faltantes, la estructura temporal de la serie y la cantidad de datos ausentes. Diferentes enfoques pueden ofrecer niveles adicionales de precisión, y esta precisión esta influenciada por la complejidad de la situación, incluyendo la distribución y la cantidad de datos faltantes.
+
+## 3.2 Técnicas de imputación a comparar
+
+Los métodos de imputación son una solución razonable para manejar múltiples datos faltantes, lo que ayuda a evitar conclusiones engañosas. Sin embargo, la imputación en series temporales univariadas, que no incluyen covariables independientes, implica grandes desafíos, ya que la única información disponible para la imputación son los valores a lo largo de la propia serie temporal. Las estructuras de dependencia del tiempo, como la tendencia, la estacionalidad y los ciclos, son de gran importancia para la imputación de los datos faltantes. Por lo tanto, estas estructuras de dependencia temporal deben capturarse mediante cualquier método que pretenda realizar imputaciones confiables de múltiples datos faltantes en series temporales univariadas. 
+
+Debe tenerse en cuenta que la eficiencia de cada método depende del conjunto de datos. Esto significa que cada técnica funciona de manera diferente dependiendo de la estructura de cada serie temporal; es decir, no existe un método único que se adapte a todos los tipos de datos.
+
+En la siguiente tabla se presentan los métodos de imputación que serán evaluados en cada situación, junto con las funciones correspondientes en R utilizadas para su implementación. A continuación, se describe brevemente cada uno de los métodos.
+
+```{=latex}
+\begin{table}[H]
+\centering
+\caption{Resumen de algoritmos de imputación.}
+\vspace{0.2cm}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{p{3cm} p{3.5cm} p{8.5cm}}
+\hline
+\rowcolor[HTML]{CAE1FF} 
+\textbf{Función en R} & \textbf{Opciones} & \textbf{Descripción} \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.random} & - & Valor aleatorio \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.replace} & - & Valor definido por el usuario \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.mean} & mean \newline median \newline mode & Valor medio \newline Valor de la mediana \newline Valor de la moda \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.interpolation} & linear \newline spline \newline stine & Interpolación lineal \newline Interpolación spline \newline Interpolación de Stineman \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.ma} & simple \newline linear \newline exponential & Media móvil simple \newline Media móvil lineal ponderada \newline Media móvil ponderada exponencial \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.locf} & locf \newline nocb & Última observación trasladada (LOCF) \newline Siguiente observación trasladada (NOCB) \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.seasplit} & - & División estacional \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.seadec} & - & Descomposición estacional \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{na.kalman} & StructTS \newline auto.arima & Suavizado de Kalman (modelo estructural) \newline Espacio de estados (ARIMA) y suavizado de Kalman \\ \hline
+\end{tabular}
+\end{table}
+```
+
+(1) na.random selecciona aleatoriamente uno de los valores observados de la serie para cada valor faltante en la serie temporal. En cambio, na.replace reemplaza los valores faltantes utilizando un valor preestablecido.
+
+(2) na.mean reemplaza los valores faltantes con el valor medio, mediano o modal de los datos observados.
+
+(3) na.interpolation reemplaza los valores faltantes por valores interpolados. El método de interpolación lineal implica trazar una línea recta entre los dos puntos conocidos más cercanos a un valor faltante y estimar el valor desconocido. La interpolación spline determina polinomios spline para todos los intervalos y luego se utilizan para imputar los valores faltantes. La interpolación de Stineman se basa en ajustar una función no lineal que minimiza la discrepancia entre los valores imputados y los datos observados.
+
+(4) na.ma permite imputar valores faltantes utilizando diferentes variantes de medias móviles. En la media móvil simple, los valores ausentes se sustituyen por la media aritmética de las observaciones en una ventana definida, donde todas las observaciones tienen el mismo peso. La media móvil lineal ponderada asigna pesos proporcionales a la distancia temporal de cada observación respecto al dato faltante. Por último, en la media móvil ponderada exponencial los pesos disminuyen exponencialmente conforme se retrocede en el tiempo.
+
+(5) na.locf con el método LOCF consiste en reemplazar cada valor faltante con el último valor observado disponible. En cambio, na.locf con el método NOCB consiste en rellenar los valores faltantes utilizando la siguiente observación no faltante disponible en la serie temporal.
+
+(6) na.seasplit asume que los datos tienen un patrón estacional recurrente y utiliza este patrón para inferir los valores faltantes. Se basa en dividir la serie temporal según los ciclos estacionales identificados, y luego imputar los valores faltantes dentro de cada ciclo.
+
+(7) na.seadec completa los datos faltantes descomponiendo la serie en sus componentes fundamentales: tendencia, estacionalidad y ruido.
+
+(8) na.kalman emplea el filtro de Kalman para estimar las componentes no observadas y luego las ajusta retrospectivamente mediante un proceso de suavizado.
+
+## 3.3 Modelos de pronóstico
+
+El objetivo del pronóstico de series temporales es estimar el comportamiento futuro de una variable a partir de sus valores históricos. El pronóstico desempeña un papel importante en la toma de decisiones para la monitorización industrial, las métricas empresariales, el control de la red eléctrica y diversos tipos de aplicaciones. Se pueden categorizar a grandes rasgos los problemas de series temporales de la siguiente manera. Si se quiere pronosticar un paso de tiempo hacia adelante en el futuro, que es el caso más común de problemas de series temporales, se denomina predicción de un paso o de un solo paso. Por otro lado, si se hace una predicción que se adelanta varios pasos de tiempo en el futuro, se denomina predicción de varios pasos.
+
+A continuación, se presenta una breve descripción de cada uno de los modelos.
+
+### 3.3.1 Los modelos ARIMA y SARIMA
+
+El modelo **ARIMA** (*AutoRegressive Integrated Moving Average*) permite capturar la dinámica de una serie temporal no estacional mediante la combinación de tres componentes fundamentales:
+
+* **Autorregresivo (p):** Indica que el valor actual de la serie se explica por una relación lineal con sus **p** valores pasados.
+* **Integración (d):** Representa el número de diferenciaciones aplicadas a las observaciones para transformar la serie original en una serie **estacionaria** (con media y varianza constantes en el tiempo).
+* **Media Móvil (q):** Modela el valor actual en función de los errores de pronóstico de los **q** períodos anteriores.
+
+Para representar estos elementos, se utiliza la nomenclatura estándar **ARIMA(p, d, q)**.
+
+Debido a que muchas series temporales presentan comportamientos cíclicos o estacionales, se emplea el modelo **SARIMA** (*Seasonal ARIMA*). Este incorpora factores adicionales para capturar la dependencia en periodos estacionales específicos, denotándose como **ARIMA(p, d, q) x (P, D, Q)s**. En esta notación:
+
+* Los términos **(p, d, q)** representan la parte no estacional.
+* Los términos **(P, D, Q)** representan los componentes autorregresivos, de integración y de media móvil de la parte estacional.
+* El subíndice **s** indica la frecuencia de la estacionalidad (por ejemplo, s=12 para datos mensuales o s=4 para datos trimestrales).
+
+### 3.3.2 Modelo ETS
+
+El modelo **ETS** (*Error, Trend, Seasonal*) se basa en el marco de modelos de **espacio de estados** para el suavizado exponencial. Este enfoque permite descomponer la serie temporal en tres componentes fundamentales: el **Error**, la **Tendencia** y la **Estacionalidad**.
+
+Cada uno de estos elementos puede combinarse de forma aditiva o multiplicativa, lo que permite al modelo adaptarse a diferentes estructuras de datos. La principal ventaja de este método es su capacidad para realizar una selección automática del modelo óptimo (entre 30 combinaciones posibles) basándose en criterios estadísticos como el **Criterio de Información de Akaike (AIC)**. Esto garantiza que el suavizado aplicado sea el que mejor capture la señal de la serie sin sobreajustar el ruido.
+
+Mientras que los modelos de alisado exponencial lineal son casos especiales de los modelos ARIMA, los modelos de alisado exponencial no lineal no tienen equivalentes ARIMA. Por otra parte, también hay muchos modelos ARIMA que no tienen homólogos de alisado exponencial.
+
+### 3.3.3 Modelo PROPHET
+
+El modelo **Prophet** es un procedimiento de pronóstico de código abierto basado en **modelos aditivos generalizados (GAM)**. A diferencia de los modelos autorregresivos tradicionales, Prophet aborda el pronóstico como un problema de ajuste de curvas, lo que lo hace muy robusto ante la presencia de valores atípicos (*outliers*) y periodos con datos faltantes.
+
+El modelo se descompone de forma aditiva en cuatro componentes principales:
+
+* **Tendencia:** Modela el crecimiento de la serie mediante funciones lineales o logísticas por tramos, detectando automáticamente puntos de cambio.
+* **Estacionalidad:** Captura los efectos periódicos (como ciclos anuales, semanales o diarios) utilizando **series de Fourier**, lo que permite modelar patrones estacionales complejos de manera flexible.
+* **Días festivos:** Permite incorporar el impacto de eventos irregulares o calendarios específicos.
+* **Error:** Representa la varianza que no es explicada por los componentes anteriores.
+
+## 3.4 Diseño de evaluación
+
+Como los valores faltantes originales son desconocidos, no es posible comparar resultados al procesar datos faltantes reales. Por lo tanto, la comparación del rendimiento de los métodos de imputación solo puede realizarse con datos faltantes simulados, lo que implica eliminar de forma artificial ciertos puntos de un conjunto de datos completo. Luego, los valores imputados podrán compararse con los valores reales.
+
+Se utilizará un esquema de simulación Monte Carlo. Para cada serie completa, se introducirán valores faltantes siguiendo diferentes mecanismos y patrones (dispersos y en bloques) y proporciones (entre 10% y 30%). En cada iteración se aplicará un método de imputación, luego se ajustará un modelo de pronóstico sobre la serie imputada y se evaluará el error de pronóstico posterior para distintos horizontes. Se repetirá el procedimiento *B* veces (por ejemplo, *B = 100*) para obtener resultados estables.
+
+El análisis permitirá explorar si el método con menor error de imputación es también el que produce mejores pronósticos, y bajo qué condiciones (tipo de serie, presencia de tendencia/estacionalidad, mecanismo de faltantes, tamaño de los bloques, etc.).
+
+
+## 3.5 Evaluación del desempeño
+
+La precisión de los pronósticos se evaluará utilizando observaciones que no hayan sido empleadas en la estimación de los modelos. Para ello, se aplicará un enfoque de evaluación fuera de la muestra (out-of-sample), dividiendo los datos disponibles en dos conjuntos: datos de entrenamiento (training set) y datos de prueba (test set). Por otro lado, el error de imputación será calculado comparando los valores imputados con los valores reales de la serie.
+
+Los datos de entrenamiento se utilizarán para la estimación de los parámetros de cada método de predicción, mientras que los datos de prueba se reservarán exclusivamente para evaluar su desempeño. Siguiendo la práctica habitual en el análisis de series temporales, se separarán las últimas observaciones de cada serie para conformar el conjunto de prueba (por ejemplo, en series de frecuencia mensual se reservarán las últimas 12 observaciones). 
+
+### 3.5.1 Evaluación del desempeño de los métodos de imputación
+
+En una primera instancia se evaluará el desempeño de los métodos de imputación comparando los valores imputados con los valores originales de la serie antes de la introducción de datos faltantes. Para ello se utilizarán métricas de error como el error cuadrático medio (RMSE), el error absoluto medio (MAE) y el error porcentual absoluto medio (MAPE), que permiten cuantificar la capacidad de cada método para reconstruir adecuadamente los valores faltantes.
+
+### 3.5.2 Evaluación del desempeño del pronóstico posterior
+
+En una segunda etapa se evaluará el impacto de los métodos de imputación sobre el desempeño de los modelos de pronóstico. Para ello se ajustarán distintos modelos de series temporales sobre las series imputadas y se generarán pronósticos para un horizonte determinado. Posteriormente, los valores pronosticados se compararán con los valores reales mediante métricas de error como RMSE, MAE y MAPE.
+
+### 3.5.3 Métricas del error
+
+Para evaluar el desempeño tanto de los métodos de imputación como de los modelos de pronóstico se utilizarán distintas métricas de error comúnmente empleadas en el análisis de series temporales.
+
+En este contexto, el error se define como la diferencia entre un valor observado y el valor estimado o pronosticado por el modelo. En particular, se considerarán el error cuadrático medio (RMSE), el error absoluto medio (MAE) y el error porcentual absoluto medio (MAPE), cuyas expresiones se presentan a continuación.
+
+* Error absoluto medio (MAE): Esta métrica es una medida de la diferencia entre dos valores, es decir, permite saber que tan diferente es el valor predicho y el valor real u observado. Para que un error con valor positivo no cancele a un error con error negativo se usa el valor absoluto de la diferencia. Como interesa conocer el comportamiento del error de todas las observaciones y no solamente de una, entonces se obtiene el promedio de los valores absolutos de la diferencia.
+
+$$MAE = \frac{\sum_{t=1}^{n} |\hat{y}_t - y_t|}{n_m}$$
+
+* Error medio cuadrado (MSE)
+Esta métrica es muy útil para saber que tan cerca es la línea de ajuste de la regresión a las observaciones. Al igual que en caso anterior se evita que un error con valor positivo anule a uno con valor negativo, pero en lugar de usar el valor absoluto, se eleva al cuadrado la diferencia.
+Siempre da un valor positivo y entre más cercano sea a cero es mejor.
+
+$$MSE = \frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}$$
+
+* Raíz del error medio cuadrado (RMSE)
+Como la métrica anterior da el resultado en unidades cuadradas, para poder interpretarlo más fácilmente se saca la raíz cuadrada y de esta manera se obtiene el valor en las unidades originales.
+
+$$RMSE = \sqrt\frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}$$
+
+* Porcentaje de error medio absoluto (MAPE)
+Esta es una métrica de la precisión, pero se presenta como si fuera un porcentaje, como ventaja tiene que es independiente de la escala y fácil de interpretar. Como desventaja es que puede producir valores no definidos, infinito o muy cercanos a cero.
+El calculo es sencillo, para cada observación se obtiene su porcentaje de error y luego se calcula la media de todos esos valores.
+
+$$MAPE = \frac{100}{n_m}\sum_{t=1}^{n}\left| \frac{y_t - \hat{y}_t}{y_t} \right|$$
+siendo $y_t$ el valor observado, $\hat{y_t}$ el valor imputado o pronosticado y $n_m$ la cantidad de valores perdidos o pronosticados.
+
+\newpage
+
+# 4. Aplicación
+
+Se trabajará con series reales completas (sin faltantes) para validar el rendimiento de cada método mediante inserción controlada de faltantes. El preprocesamiento incluirá: visualización, análisis de componentes (tendencia/estacionalidad), análisis ACF/PACF, definición de particiones train/test y definición de horizontes de pronóstico.
+
+El procedimiento de aplicación se desarrolla de acuerdo con los siguientes pasos:
+
+1 - Selección de la serie temporal: Se identifica y selecciona una serie temporal completa, es decir, sin valores faltantes, que sirva como base para el análisis.
+
+2 - Análisis de las características de la serie: Se analizan las propiedades de la serie, incluyendo tendencia, estacionalidad y estructura de autocorrelación, utilizando herramientas visuales y estadísticas. 
+
+3 - Introducción de valores faltantes: Se introducen valores faltantes de manera controlada en la serie temporal, siguiendo distintos mecanismos y patrones de ausencia con el propósito de representar escenarios diversos para la imputación. En particular, se consideran distintos porcentajes de datos faltantes y configuraciones de ausencia, generados de forma artificial a partir de la serie completa.
+
+4 - Aplicación de métodos de imputación: Se implementan los métodos previamente seleccionados para completar los valores faltantes. Este proceso se lleva a cabo de manera sistemática, garantizando la consistencia en las condiciones de análisis.
+
+5 - Evaluación del desempeño de los métodos: Se calculan métricas de error comparando los valores imputados con los valores originales de la serie completa. Este análisis permite cuantificar la precisión y eficacia de cada método
+en distintos escenarios, identificando el más adecuado en función de las características de la serie y el patrón de datos faltantes.
+
+6 - Ajuste de modelos de pronóstico: Se ajustan los modelos previamente seleccionados utilizando el conjunto de entrenamiento, generando predicciones para horizontes h=1, 3, 6 y 12.
+
+7 - Evaluación del desempeño de los modelos: Se calculan métricas de error comparando los valores pronosticados con los valores originales de la serie (separados como test set).
+
+8 - Comparación de resultados: se realiza un análisis comparativo del desempeño de las distintas combinaciones de métodos de imputación y modelos de pronóstico, con el fin de evaluar el impacto del tratamiento de los datos faltantes sobre la precisión de las predicciones.
+
+Este procedimiento permite analizar de manera sistemática el efecto que diferentes métodos de imputación pueden tener sobre el desempeño predictivo de los modelos de series temporales considerados. A continuación, se presenta un esquema visual que sintetiza este proceso.
+
+\newpage
+
+```{dot}
+//| label: fig-metodologia
+//| fig-cap: "Flujo metodológico del procedimiento de aplicación."
+//| fig-align: center
+
+digraph metodologia {
+  // Configuración de la cuadrícula
+  graph [rankdir = TB, nodesep = 0.4, ranksep = 0.6]
+
+  // Le damos un ancho mínimo (width=2.2) para que todas las cajas se vean uniformes
+  node [shape = box, style = filled, fillcolor = white, color = "#1a3a5a", 
+        penwidth = 1.2, fontname = "Helvetica", fontsize = 11, 
+        margin = "0.2,0.15", width = 2.2]
+
+  // Fila 1 (Arriba)
+  S1 [label = "1. Selección de la\nserie temporal"]
+  S2 [label = "2. Análisis de\ncaracterísticas"]
+  S3 [label = "3. Introducción de\nvalores faltantes"]
+
+  // Fila 2 (Medio)
+  S4 [label = "4. Aplicación de\nmétodos de\nimputación"]
+  S5 [label = "5. Evaluación\ndel desempeño\n(Imputación)"]
+  S6 [label = "6. Ajuste de\nmodelos de\npronóstico"]
+
+  // Fila 3 (Abajo)
+  S7 [label = "7. Evaluación\ndel desempeño\n(Pronóstico)"]
+  S8 [label = "8. Comparación\nde resultados"]
+  S9 [label = "9. Conclusiones"]
+
+  // Obligamos a Graphviz a armar 3 filas exactas
+  { rank = same; S1; S2; S3; }
+  { rank = same; S6; S5; S4; } // S6 a la izq, S5 al centro, S4 a la der
+  { rank = same; S7; S8; S9; }
+
+  // -----------------------------------------------------
+  // Columnas invisibles: El secreto para la simetría 3x3
+  // -----------------------------------------------------
+  edge [style = invis, constraint = true]
+  S1 -> S6        // Columna Izquierda
+  S2 -> S5 -> S8  // Columna Central
+  S4 -> S9        // Columna Derecha
+
+  // -----------------------------------------------------
+  // Las flechas reales (El recorrido del proceso)
+  // -----------------------------------------------------
+  edge [style = solid, color = black, penwidth = 1.2, constraint = false]
+
+  // Recorrido Fila 1 (Izquierda a Derecha)
+  S1 -> S2 -> S3
+
+  // Recorrido Fila 2 (Derecha a Izquierda)
+  S4 -> S5 -> S6
+
+  // Recorrido Fila 3 (Izquierda a Derecha)
+  S7 -> S8 -> S9
+
+  // Saltos entre filas (Tienen constraint=true para bajar verticalmente)
+  edge [constraint = true]
+  S3 -> S4  // Baja por el lado derecho
+  S6 -> S7  // Baja por el lado izquierdo
+}
+```
+
+\newpage
+
+# 5. Cronograma de actividades
+
+```{=latex}
+\begin{table}[H]
+\centering
+\vspace{0.2cm}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{p{2.5cm} p{11.5cm}}
+\hline
+\rowcolor[HTML]{CAE1FF} 
+\textbf{Mes} & \textbf{Actividad} \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Marzo} & --- \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Abril} & --- \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Mayo} & --- \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Junio} & --- \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Julio} & --- \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Agosto} & --- \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Septiembre} & --- \\ \hline
+\end{tabular}
+\end{table}
+```
+
+\newpage
+
+# 6. Bibliografía
+
+**Arrioja, N.** (s.f.). *Métricas en regresión*. Medium. <https://medium.com/@nicolasarrioja/métricas-en-regresión-5e5d4259430b>
+
+**Benavides, I. F., Santacruz, M., Romero-Leiton, J. P., Barreto, C., & Selvaraj, J. J.** (2023). Assessing methods for multiple imputation of systematic missing data in marine fisheries time series with a new validation algorithm. *Aquaculture and Fisheries, 8*(5), 587–599. <https://doi.org/10.1016/j.aaf.2021.12.013>
+
+**Hyndman, R. J., & Athanasopoulos, G.** (2018). *Forecasting: principles and practice*. OTexts.
+
+**Little, R. J.**, & Rubin, D. B. (2019). *Statistical analysis with missing data* (3rd ed.). Wiley.
+
+**Mandeville, P. B.** (2010). Tema 24: Observaciones perdidas. *CIENCIA UANL, 13*(3), 313–324. <https://dialnet.unirioja.es/servlet/articulo?codigo=3245988>
+
+**Moritz, S., Sardá, A., Bartz-Beielstein, T., Zaefferer, M., & Stork, J. **(2015). Comparison of different Methods for Univariate Time Series Imputation in R. *arXiv preprint arXiv:1510.03924*. <https://arxiv.org/abs/1510.03924>
+
+**Niako, N., Melgarejo, J. D., Maestre, G. E., & Vatcheva, K. P.** (2024). Effects of missing data imputation methods on univariate blood pressure time series data analysis and forecasting with ARIMA and LSTM. *BMC Medical Research Methodology, 24*(1), 320. <https://doi.org/10.1186/s12874-024-02448-3>
+
+**Q2B Studio.** (s.f.). *Manejo de datos faltantes en R: guía de imputación con MICE*. Q2B Studio Blog. <https://www.q2bstudio.com/nuestro-blog/25440/manejo-de-datos-faltantes-en-r-guia-de-imputacion-con-mice>
+
+**Román Radío, G.** (2017). *Los valores perdidos en el muestreo de poblaciones finitas. Técnicas de imputación* [Trabajo Fin de Máster, Universidad de Vigo]. <http://eio.usc.es/pub/mte/descargas/ProyectosFinMaster/Proyecto_1468.pdf>
+
+**Tamplin, L** (2025). *Evaluación de Métodos de Imputación de Datos Faltantes en Series Temporales Univariadas.* [Tesis de grado, Universidad Nacional de Rosario]. 
+
+**Taylor, S. J., & Letham, B. **(2017). *Prophet: forecasting at scale*. Facebook Research Blog. <https://research.facebook.com/blog/2017/2/prophet-forecasting-at-scale/>
+
+**Wu, S.-F., Chang, C.-Y., & Lee, S.-J.** (2015). Time series forecasting with missing values. *2015 1st International Conference on Industrial Networks and Intelligent Systems (INISCom)*. IEEE. <https://ieeexplore.ieee.org/abstract/document/7157837>
+
+**Xian, X.**, Wang, L., Wu, X., & Tang, X. (2023). Comparison of SARIMA model, Holt-Winters model and ETS model in predicting the incidence of foodborne disease. *BMC Infectious Diseases, 23*(1), 803. <https://doi.org/10.1186/s12879-023-08799-4>
+

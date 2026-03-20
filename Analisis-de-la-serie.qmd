@@ -1,0 +1,318 @@
+---
+title: ""
+author: ""
+date: ""
+format: 
+  pdf:
+    code-block: true
+    code-block-bg: "#f5f5f5"
+    code-block-border-left: "#4682B4"
+    code-block-font-size: 9pt
+    fig-caption: true
+    fontsize: 12pt
+    geometry: margin=2.5cm
+    include-in-header:
+      - file: preambulo.tex
+      - text: |
+          \usepackage{float}
+          \floatplacement{figure}{H}
+    mathspec: true
+lang: es
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.align = "center")
+
+# Librerías
+library(dplyr)
+library(forecast)
+library(ggfortify)
+library(ggplot2)
+library(ggrepel)
+library(gridExtra)
+library(gt)
+library(kableExtra)
+library(knitr)
+library(lubridate)
+library(readr)
+library(tseries)
+library(zoo)
+```
+
+```{r}
+#Carga de datos
+datos <- read_csv("demanda.csv", show_col_types = FALSE) %>%
+  mutate(fecha = ymd(fecha),
+         anio  = year(fecha),
+         mes  = month(fecha),
+         demanda = demanda/1000)
+
+vals <- datos$demanda
+
+serie <- ts(vals, 
+            start = c(2001, 1), 
+            frequency = 12)
+
+serie_train <- window(serie,start=c(2010,1), end = c(2024, 12))
+serie_test <- window(serie, start = c(2025, 1)) 
+#serie_test tiene observaciones que se guardan para luego evaluar pronosticos
+```
+
+# Introducción
+
+La electricidad constituye un insumo esencial para el funcionamiento de la economía y el bienestar social. En particular, el análisis de la demanda de energía eléctrica resulta de gran interés para los organismos reguladores, las empresas proveedoras y los investigadores, ya que permite comprender los patrones de consumo.
+
+En este trabajo se utilizará una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación. La serie abarca mediciones mensuales desde enero de 2001 hasta diciembre de 2025, y cuenta con 300 observaciones, que reflejan el consumo eléctrico total del país en gigavatios-hora (en miles de GWh). A fines prácticos, se trabajará con observaciones desde enero de 2010 hasta diciembre de 2025
+
+
+# Análisis descriptivo
+
+Se realizó una partición de la serie temporal en dos subconjuntos. Las observaciones comprendidas entre enero de 2010 y diciembre de 2024 conforman el conjunto de entrenamiento, utilizado para la especificación y ajuste del modelo. Por su parte, los datos de 2025 se reservaron como conjunto de prueba para evaluar la capacidad predictiva ex-post del modelo seleccionado.
+
+```{r fig-grafico1, fig.cap="Demanda mensual de energía eléctrica en Argentina (2010–2024)", fig.height=3, fig.width=5}
+ggplot() +
+  autolayer(serie_train, series = "Serie de entrenamiento")  +
+  scale_colour_manual(
+    name = "Serie",
+    values = c(
+      "Serie de entrenamiento" = "black"
+      )
+  ) +
+  scale_fill_manual(
+    name = "Serie",
+    values = c(
+      "Serie de entrenamiento" = "black"
+    )
+  ) +
+  scale_x_continuous(breaks = seq(2010, 2025, by = 2)) +
+  labs(
+    title = NULL,
+    x = "Año",
+    y = expression(z[t])
+  ) +
+  theme_minimal(base_size = 13) +
+    theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+```
+
+La @fig-grafico1 muestra un aumento general de la demanda a lo largo del periodo analizado; sin embargo, la tendencia no es estrictamente lineal.
+
+En 2020 se observa un evento atípico: la demanda tuvo un descenso muy marcado en abril. Por otro lado, en marzo de 2023 se presentó un pico de demanda, ya que entre el 1 y el 19 de ese mes se registró una ola de calor extrema en el este del país (La Nación, 2024).
+
+```{r fig-grafico2, fig.cap= "Distribución de la demanda eléctrica por año", fig.height=3, fig.width=5.5}
+demanda_filtrada <- subset(datos, 2010 <= anio & anio < 2025)
+ggplot(demanda_filtrada, aes(x = factor(anio), y = demanda)) +
+  geom_boxplot(fill = "slateblue4", alpha = 0.7) +
+  labs(x = "Año", y = "Demanda (miles de GWh)") +
+  ggtitle(NULL)+
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+``` 
+
+En la @fig-grafico2 se observa que antes del 2015 la demanda fue aumentando con el paso de los años, entre 2015 y 2019 la demanda se mantuvo relativamente estable, mientras que en 2020 se produjo una caída marcada con mayor dispersión, asociada al impacto de la pandemia. A partir de 2021, la mediana anual comienza a incrementarse de forma sostenida, alcanzando máximos en 2023–2024. Asimismo, en los años más recientes se evidencia una mayor variabilidad mensual, lo cual refleja la aparición de episodios extremos de consumo, como olas de calor e inviernos más intensos.
+
+```{r fig-grafico3, fig.cap= "Gráfico estacional de la serie por año", fig.height=3, fig.width=5.5}
+p <- ggseasonplot(serie_train) +
+  labs(x = "Mes",
+       y = "Demanda (miles de GWh)") +
+  ggtitle(NULL) +                     
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none",
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+
+datos_plot <- p$data
+etiquetas_izquierda <- c(2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)
+datos_izq <- datos_plot %>% filter(year %in% etiquetas_izquierda, cycle == 1)
+datos_der <- datos_plot %>% filter(!(year %in% etiquetas_izquierda), cycle == 12)
+
+grafico_final_centrado <- p +
+  geom_text_repel(data = datos_izq, 
+                  aes(x = time, y = y, label = year, color = as.factor(year)),
+                  nudge_x = -0.055,      
+                  size = 3.5,            
+                  direction = "y",      
+                  segment.color = NA,   
+                  show.legend = FALSE,
+                  hjust = 0.5) +         
+  geom_text_repel(data = datos_der, 
+                  aes(x = time, y = y, label = year, color = as.factor(year)),
+                  nudge_x = 0.055,       
+                  size = 3.5,
+                  direction = "y", 
+                  segment.color = NA,   
+                  show.legend = FALSE,
+                  hjust = 0.5) +      
+  coord_cartesian(xlim = c(-1/12, 1), expand = FALSE, clip = "off") + 
+  theme(plot.margin = margin(t = 10, r = 15, b = 10, l = 15)) 
+
+grafico_final_centrado
+```
+
+En la @fig-grafico3 se observa que la serie tiene un patrón claramente estacional, donde en cada año se ven picos y valles recurrentes, típicos de la demanda energética que depende del clima (veranos con aire acondicionado, inviernos con calefacción eléctrica). La amplitud de los picos varía con el tiempo, mostrando un aumento de la estacionalidad en los últimos años.
+
+```{r fig-grafico4, fig.cap= "Gráfico estacional de la serie por mes", fig.height=3, fig.width=5.5}
+ggmonthplot(serie_train)+
+  labs(x = "Mes",
+       y = "Demanda (miles de GWh)") +
+  ggtitle(NULL) +                     
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none",
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+```
+
+La @fig-grafico4 evidencia la presencia de un componente estacional anual en la demanda eléctrica. Se observan picos en los meses de marzo y enero, asociados a olas de calor, y valores mínimos en abril. Las medias mensuales confirman un patrón recurrente de consumo que se repite año tras año.
+
+```{r fig-grafico5, fig.cap= "Función de autocorrelación de la serie", fig.height=3, fig.width=5.5}
+ggAcf(serie_train, lag.max = 96) + 
+      scale_x_continuous(breaks = seq(0,96,6), labels = seq(0,96,6)) +
+      labs(title = NULL,x = "Rezago (meses)", y = "FAC") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+
+```
+
+De la @fig-grafico5 se puede decir que la autocorrelación no decae rápidamente, lo cual indica la presencia de dependencia a largo plazo (tendencia y/o estacionalidad). Además, las autocorrelaciones positivas en los primeros rezagos sugieren que la demanda de un mes está muy relacionada con los meses inmediatamente anteriores.
+
+Se observan picos significativos en rezagos múltiplos de 12 meses, lo cual evidencia la estacionalidad anual de la serie.
+
+```{r fig-grafico6, fig.cap= "Función de autocorrelación parcial de la serie", fig.height=3, fig.width=5.5}
+ggPacf(serie_train, lag.max = 96) + 
+      scale_x_continuous(breaks = seq(0,96,6), labels = seq(0,96,6)) +
+      labs(title = NULL,x = "Rezago (meses)", y = "FACP") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+
+```
+
+Por otro lado, en la @fig-grafico6 se observan valores distintos de cero en los primeros rezagos, indicando la importancia de términos autorregresivos de bajo orden (AR).
+
+Al igual que en la ACF, aparecen picos en rezagos estacionales (12, 24, …), lo cual confirma la estacionalidad anual.
+
+
+# Resultados
+
+```{r tabla-1}
+resultados_tabla <- readRDS("Resultados/resultados_MCAR_10_ARIMA.rds")
+
+rownames(resultados_tabla) <- NULL
+
+resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  mutate(across(where(is.numeric), ~ cell_spec(.x, 
+                                               bold = (.x == min(.x, na.rm = TRUE)),
+                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
+                                               format = "latex"))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "lcccccc", 
+    booktabs = TRUE,   
+    linesep = "",
+    caption = "Resultados de pronóstico con modelo ARIMA (Escenario 10\\% MCAR)",
+    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-2}
+resultados_tabla <- readRDS("Resultados/resultados_MCAR_10_ETS.rds")
+
+rownames(resultados_tabla) <- NULL
+
+resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  mutate(across(where(is.numeric), ~ cell_spec(.x, 
+                                               bold = (.x == min(.x, na.rm = TRUE)),
+                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
+                                               format = "latex"))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "lcccccc", 
+    booktabs = TRUE,   
+    linesep = "",
+    caption = "Resultados de pronóstico con modelo ETS (Escenario 10\\% MCAR)",
+    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  )%>%
+  add_header_above(
+    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+
+```{r tabla-3}
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_10_PROPHET.rds")
+
+resultados_prophet <- resultados_prophet[, -1]
+rownames(resultados_prophet) <- NULL
+
+resultados_prophet %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "ccc",
+    booktabs = TRUE,
+    caption = "Resultados de pronóstico con modelo Prophet (Escenario 10\\% MCAR)",
+    col.names = c("RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c("Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = "#CAE1FF"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
