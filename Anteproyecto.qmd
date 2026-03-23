@@ -2,6 +2,8 @@
 title: ""
 author: ""
 date: ""
+lang: es
+
 format: 
   pdf:
     include-in-header:
@@ -18,8 +20,15 @@ format:
           \fancyfoot[C]{\thepage}
           \renewcommand{\headrulewidth}{0pt}
     geometry: margin=2.5cm
-    mathspec: true
-lang: es
+
+bibliography: referencias.bib
+csl: https://www.zotero.org/styles/apa
+
+reference-location: document
+
+nocite: |
+  @*
+
 execute:
   echo: false
   warning: false
@@ -115,7 +124,7 @@ En un escenario de datos faltantes completamente al azar (MCAR), los puntos de d
 
 La imputación de datos faltantes es más sencilla cuando estos ocurren completamente al azar (MCAR). Esto se debe a que en el caso de MNAR, las observaciones faltantes pueden formar fragmentos lo suficientemente grandes como para ocultar los componentes estructurales de las series temporales. Sin embargo, si la serie temporal presenta una estructura temporal bien definida, los métodos de imputación que aprovechan características como la estacionalidad, los ciclos y la autocorrelación pueden tener una ventaja sobre otros métodos más simples.
 
-La precisión de los métodos de imputación para datos faltantes en series temporales depende de varios factores, incluyendo la naturaleza de los datos faltantes, la estructura temporal de la serie y la cantidad de datos ausentes. Diferentes enfoques pueden ofrecer niveles adicionales de precisión, y esta precisión esta influenciada por la complejidad de la situación, incluyendo la distribución y la cantidad de datos faltantes.
+La precisión de los métodos de imputación para datos faltantes en series temporales depende de varios factores, incluyendo la naturaleza de los datos faltantes, la estructura temporal de la serie y la cantidad de datos ausentes. Diferentes enfoques pueden ofrecer niveles adicionales de precisión, y esta precisión está influenciada por la complejidad de la situación, incluyendo la distribución y la cantidad de datos faltantes.
 
 ## 3.2 Técnicas de imputación a comparar
 
@@ -194,7 +203,7 @@ Cada uno de estos elementos puede combinarse de forma aditiva o multiplicativa, 
 
 Mientras que los modelos de alisado exponencial lineal son casos especiales de los modelos ARIMA, los modelos de alisado exponencial no lineal no tienen equivalentes ARIMA. Por otra parte, también hay muchos modelos ARIMA que no tienen homólogos de alisado exponencial.
 
-### 3.3.3 Modelo PROPHET
+### 3.3.3 Modelo Prophet
 
 El modelo **Prophet** es un procedimiento de pronóstico de código abierto basado en **modelos aditivos generalizados (GAM)**. A diferencia de los modelos autorregresivos tradicionales, Prophet aborda el pronóstico como un problema de ajuste de curvas, lo que lo hace muy robusto ante la presencia de valores atípicos (*outliers*) y periodos con datos faltantes.
 
@@ -361,13 +370,13 @@ digraph metodologia {
 \hline
 \rowcolor[HTML]{CAE1FF} 
 \textbf{Mes} & \textbf{Actividad} \\ \hline
-\cellcolor[HTML]{F0F8FF}\textbf{Marzo} & --- \\ \hline
-\cellcolor[HTML]{F0F8FF}\textbf{Abril} & --- \\ \hline
-\cellcolor[HTML]{F0F8FF}\textbf{Mayo} & --- \\ \hline
-\cellcolor[HTML]{F0F8FF}\textbf{Junio} & --- \\ \hline
-\cellcolor[HTML]{F0F8FF}\textbf{Julio} & --- \\ \hline
-\cellcolor[HTML]{F0F8FF}\textbf{Agosto} & --- \\ \hline
-\cellcolor[HTML]{F0F8FF}\textbf{Septiembre} & --- \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Marzo} & 	Revisión bibliográfica + ajuste final del anteproyecto \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Abril} & 	Implementación inicial (lectura de datos + imputación básica) \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Mayo} & Implementación de métodos de imputación \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Junio} & 	Implementación de modelos de pronóstico \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Julio} & 	Simulación Monte Carlo + generación de resultados \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Agosto} & Aplicación a datos reales + análisis \\ \hline
+\cellcolor[HTML]{F0F8FF}\textbf{Septiembre} & Redacción final \\ \hline
 \end{tabular}
 \end{table}
 ```
@@ -375,30 +384,4 @@ digraph metodologia {
 \newpage
 
 # 6. Bibliografía
-
-**Arrioja, N.** (s.f.). *Métricas en regresión*. Medium. <https://medium.com/@nicolasarrioja/métricas-en-regresión-5e5d4259430b>
-
-**Benavides, I. F., Santacruz, M., Romero-Leiton, J. P., Barreto, C., & Selvaraj, J. J.** (2023). Assessing methods for multiple imputation of systematic missing data in marine fisheries time series with a new validation algorithm. *Aquaculture and Fisheries, 8*(5), 587–599. <https://doi.org/10.1016/j.aaf.2021.12.013>
-
-**Hyndman, R. J., & Athanasopoulos, G.** (2018). *Forecasting: principles and practice*. OTexts.
-
-**Little, R. J.**, & Rubin, D. B. (2019). *Statistical analysis with missing data* (3rd ed.). Wiley.
-
-**Mandeville, P. B.** (2010). Tema 24: Observaciones perdidas. *CIENCIA UANL, 13*(3), 313–324. <https://dialnet.unirioja.es/servlet/articulo?codigo=3245988>
-
-**Moritz, S., Sardá, A., Bartz-Beielstein, T., Zaefferer, M., & Stork, J. **(2015). Comparison of different Methods for Univariate Time Series Imputation in R. *arXiv preprint arXiv:1510.03924*. <https://arxiv.org/abs/1510.03924>
-
-**Niako, N., Melgarejo, J. D., Maestre, G. E., & Vatcheva, K. P.** (2024). Effects of missing data imputation methods on univariate blood pressure time series data analysis and forecasting with ARIMA and LSTM. *BMC Medical Research Methodology, 24*(1), 320. <https://doi.org/10.1186/s12874-024-02448-3>
-
-**Q2B Studio.** (s.f.). *Manejo de datos faltantes en R: guía de imputación con MICE*. Q2B Studio Blog. <https://www.q2bstudio.com/nuestro-blog/25440/manejo-de-datos-faltantes-en-r-guia-de-imputacion-con-mice>
-
-**Román Radío, G.** (2017). *Los valores perdidos en el muestreo de poblaciones finitas. Técnicas de imputación* [Trabajo Fin de Máster, Universidad de Vigo]. <http://eio.usc.es/pub/mte/descargas/ProyectosFinMaster/Proyecto_1468.pdf>
-
-**Tamplin, L** (2025). *Evaluación de Métodos de Imputación de Datos Faltantes en Series Temporales Univariadas.* [Tesis de grado, Universidad Nacional de Rosario]. 
-
-**Taylor, S. J., & Letham, B. **(2017). *Prophet: forecasting at scale*. Facebook Research Blog. <https://research.facebook.com/blog/2017/2/prophet-forecasting-at-scale/>
-
-**Wu, S.-F., Chang, C.-Y., & Lee, S.-J.** (2015). Time series forecasting with missing values. *2015 1st International Conference on Industrial Networks and Intelligent Systems (INISCom)*. IEEE. <https://ieeexplore.ieee.org/abstract/document/7157837>
-
-**Xian, X.**, Wang, L., Wu, X., & Tang, X. (2023). Comparison of SARIMA model, Holt-Winters model and ETS model in predicting the incidence of foodborne disease. *BMC Infectious Diseases, 23*(1), 803. <https://doi.org/10.1186/s12879-023-08799-4>
 
