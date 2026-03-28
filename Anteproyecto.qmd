@@ -21,7 +21,7 @@ format:
           \renewcommand{\headrulewidth}{0pt}
     geometry: margin=2.5cm
 
-bibliography: referencias.bib
+bibliography: referencias1.bib
 csl: https://www.zotero.org/styles/apa
 
 reference-location: document

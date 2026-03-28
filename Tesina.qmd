@@ -1,0 +1,143 @@
+---
+title: ""
+author: ""
+date: ""
+lang: es
+
+format: 
+  pdf:
+    number-sections: true
+    include-in-header:
+      - text: |
+          \usepackage{fancyhdr}
+          \usepackage{colortbl}
+          \definecolor{azulindice}{RGB}{70, 130, 180}
+          
+          \renewcommand{\contentsname}{\textcolor{azulindice}{Índice}}
+          
+          \pagestyle{fancy}
+          \fancyhf{}
+          \fancyhead[R]{\footnotesize \textbf{Tesina}. Licenciatura en Estadística. Facultad de Ciencias Económicas y Estadística. UNR}
+          \fancyfoot[C]{\thepage}
+          \renewcommand{\headrulewidth}{0pt}
+    geometry: margin=2.5cm
+
+bibliography: referencias2.bib
+csl: https://www.zotero.org/styles/apa
+
+reference-location: document
+
+nocite: |
+  @*
+
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+\begin{titlepage}
+\centering
+\vspace*{0.5cm}
+\includegraphics[width=0.4\textwidth]{logounr.png} \par
+\vspace{0.5cm}
+{\large UNIVERSIDAD NACIONAL DE ROSARIO \par}
+{\large Facultad de Ciencias Económicas y Estadística \par}
+\vspace{3cm}
+{\Huge\bfseries Imputación de Datos Faltantes en Series Temporales Univariadas: Evaluación Basada en Desempeño de Pronóstico \par}
+\vspace{1cm}
+{\Large\bfseries Tesina de grado \par}
+\vfill 
+\begin{flushright}
+\large
+\underline{Carrera}: Licenciatura en Estadística \\
+\underline{Alumno}: Sánchez Travella, Joaquín \\
+\underline{Directora}: Mag. Méndez, Fernanda
+\end{flushright}
+\vspace{1.5cm}
+{\large Año 2026 \par}
+\thispagestyle{empty}
+\end{titlepage}
+
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{2}
+
+## Agradecimientos {.unnumbered .unlisted}
+
+\newpage
+
+## Resumen {.unnumbered .unlisted}
+
+Las series temporales univariadas constituyen una herramienta fundamental para el análisis y la predicción de fenómenos que evolucionan a lo largo del tiempo en múltiples áreas de aplicación. Sin embargo, en la practica es frecuente la presencia de datos faltantes, lo que puede afectar tanto la calidad del análisis como el desempeño de los modelos predictivos. En este contexto, la imputación de valores faltantes surge como una estrategia clave para reconstruir las series y permitir la aplicación de métodos de modelado y pronóstico.
+
+El presente trabajo tiene como objetivo evaluar y comparar distintos métodos de imputación de datos faltantes en series temporales univariadas, incorporando como criterio principal el desempeño de pronóstico posterior, bajo el enfoque conocido como *forecast-after-imputation*. A diferencia de gran parte de la literatura existente, que se centra en la calidad de los datos imputados, este estudio analiza el impacto de las distintas técnicas de imputación sobre la capacidad predictiva de los modelos ajustados a partir de las series completas.
+
+Para ello, se propone un esquema de simulación basado en series temporales completas a las que se les introducen valores faltantes de manera artifical, considerando distintos mecanismos de ausencia, patrones de faltantes y niveles de pérdida de información. Sobre estos datos incompletos se aplican diversos metodos de imputación, que incluyen tanto enfoques simples como técnicas más avanzadas adaptadas a la estructura temporal de los datos. Posteriormente, se ajustan modelos de series temporales y se evalúa su desempeño mediante métricas de error de pronóstico, tales como RMSE, MAE y MAPE, considerando distintos horizontes de predicción y un enfoque de evaluación fuera de muestra.
+
+Los resultados obtenidos permiten analizar cómo la elección del método de imputación influye en la precisión de los pronósticos, evidenciando que no existe una técnica universalmente superior, sino que su desempeño depende de las características de la serie y del tipo de datos faltantes. En particular, se identifican escenarios en los que ciertos métodos resultan más adecuados cuando el objetivo principal es mejorar la capacidad predictiva.
+
+En conclusión, este trabajo aporta una perspectiva integral para la evaluación de métodos de imputación en series temporales univariadas, integrando el proceso completo desde la imputación hasta el pronóstico. Asimismo, proporciona recomendaciones prácticas orientadas a la selección de técnicas en funció, del objetivo de predicción, contribuyendo al desarrollo de estrategias más robustas para el análisis de datos incompletos en contextos aplicados.
+
+\underline{Palabras clave}: Series temporales univariadas, datos faltantes, imputación, pronóstico, desempeño.
+
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+# Introducción
+
+Las series temporales desempeñan un papel fundamental en la comprensión y predicción de fenómenos que evolucionan a lo largo del tiempo, siendo ampliamente utilizadas en diversas áreas como la economía, la meteorología, la salud pública, la energía y los negocios. A través de ellas es posible identificar patrones, tendencias y comportamientos recurrentes que permiten anticipar escenarios futuros y apoyar la toma de decisiones. Sin embargo, en la práctica, los datos observados rara vez se encuentran completos, siendo frecuente la presencia de valores faltantes.
+
+La existencia de datos faltantes constituye uno de los problemas más habituales y desafiantes en el análisis de datos. Estos pueden originarse por múltiples causas, entre ellas fallas en dispositivos de medición, errores en los sistemas de captura, restricciones de acceso a la información por motivos de privacidad o la ocurrencia de eventos imprevistos que interrumpen los procesos de recolección. Un tratamiento inadecuado de estos valores ausentes puede generar sesgos en las estimaciones, disminuir la potencia estadística y conducir a conclusiones erróneas. Si bien una alternativa consiste en eliminar las observaciones incompletas, esta práctica puede implicar una pérdida significativa de información, especialmente cuando la proporción de datos faltantes es elevada.
+
+En este contexto, la imputación de datos surge como una estrategia clave, ya que permite reemplazar los valores faltantes por estimaciones estadísticamente plausibles, preservando en la medida de lo posible la estructura temporal de los datos originales. Este aspecto resulta particularmente relevante en el análisis de series temporales, donde muchos métodos de modelado y pronóstico requieren series completas para su correcta implementación. Por lo tanto, la imputación no solo contribuye a mejorar la calidad de los datos, sino que también constituye un paso previo indispensable para el desarrollo de modelos predictivos confiables.
+
+Desde un punto de vista metodológico, debe realizarse una distinción entre series temporales multivariadas y univariadas. En las primeras, la presencia de múltiples variables interrelacionadas permite aprovechar las correlaciones existentes para estimar valores faltantes de manera más robusta. En cambio, en las series univariadas, donde solo se dispone de una única variable, la imputación representa un desafío mayor, ya que los métodos deben basarse exclusivamente en las dependencias temporales inherentes a la serie, como la autocorrelación y la estacionalidad. Esta limitación exige el uso de técnicas específicamente diseñadas para capturar la estructura temporal de los datos.
+
+Es importante destacar que no existe un método de imputación que resulte óptimo en todos los contextos. El desempeño de cada técnica depende en gran medida de las características de la serie analizada, tales como su complejidad estructural, la presencia de ruido y la proporción y el mecanismo de los datos faltantes. En este sentido, gran parte de la literatura se ha enfocado en comparar métodos de imputación a partir de la calidad de los datos reconstruidos, sin profundizar en el impacto que dichas técnicas pueden tener en etapas posteriores del análisis.
+
+En particular, se identifica un vacío en relación con la evaluación del efecto de los métodos de imputación sobre el desempeño de los modelos de pronóstico. Dado que en numerosos contextos el objetivo principal del análisis de series temporales es la predicción, resulta fundamental analizar cómo las distintas estrategias de imputación influyen en la capacidad predictiva de los modelos ajustados sobre los datos completados.
+
+En este marco, la presente tesina tiene como objetivo analizar y comparar distintos métodos de imputación de datos faltantes en series temporales univariadas, incorporando como criterio central de evaluación el desempeño de pronóstico posterior, enfoque conocido como *forecast-after-imputation*. Para ello, se propone un esquema de simulación que contempla diferentes mecanismos de datos faltantes, patrones de ausencia y niveles de pérdida de información, integrando en un mismo flujo de análisis la imputación de datos, el ajuste de modelos de series temporales y la evaluación del error de pronóstico para distintos horizontes y bajo un enfoque fuera de muestra.
+
+La estructura del trabajo se divide en 7 capitulos, incluyendo esta introducción, y es la siguiente: en el segundo capitulo  se describen los objetivos que se persiguen en esta tesina, mientras que el tercer capítulo desarrolla la metodología empleada. En el cuarto capítulo, se utilizan series temporales completas a las que se les introducen valores faltantes de forma artificial, con el objetivo de evaluar el efecto que diferentes métodos de imputación pueden tener sobre el desempeño predictivo de los modelos de series temporales considerados. Las conclusiones y posibles lineas de trabajo futuro se presentan en la sección 5 del trabajo. Finalmente, se incluyen las referencias bibliográficas y los anexos en las secciones 6 y 7, respectivamente.
+
+\newpage
+
+# Objetivos
+
+## Objetivo general
+
+El objetivo principal de la tesina es analizar y comparar distintos métodos de imputación de datos faltantes en series temporales univariadas, considerando como criterio principal de evaluación el impacto de dichas técnicas sobre el desempeño de los modelos de pronóstico.
+
+## Objetivos específicos
+
+* Revisar la literatura sobre métodos de imputación de datos faltantes en series temporales univariadas y su relación con tareas de pronóstico.
+* Implementar en R un conjunto representativo de métodos de imputación que abarque técnicas simples (media, mediana, moda), estructurales (descomposición estacional) y enfoques basados en modelos avanzados (Kalman, ARIMA).
+* Diseñar un esquema de simulación que contemple distintos mecanismos de datos faltantes (MCAR, MAR temporal y MNAR), así como diferentes patrones de ausencia (dispersos y en bloques) y niveles de pérdida de información.
+* Construir un pipeline de procesamiento reproducible que integre de forma secuencial la generación de faltantes, la aplicación de técnicas de imputación, el ajuste de modelos de series temporales y la generación de predicciones.
+* Comparar la eficacia de los métodos mediante el uso de métricas de error de imputación (RMSE, MAE y MAPE) en conjunto con métricas de desempeño de pronóstico para horizontes de tiempo de corto y mediano plazo (h=1, 3, 6 y 12).
+* Validar el desempeño de los métodos mediante su aplicación a series temporales reales.
+* Derivar recomendaciones prácticas fundamentadas en los resultados obtenidos, que permitan identificar qué técnicas de imputación resultan más adecuadas según la estructura de la serie y el objetivo específico de mejorar el forecasting.
+
+\newpage
+
+# Metodología
+
+
+
+\newpage
+
+# Bibliografía
+
+::: {#refs}
+:::
+
+\newpage
+
+# Anexo
