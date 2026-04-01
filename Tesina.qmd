@@ -118,7 +118,7 @@ El objetivo principal de la tesina es analizar y comparar distintos métodos de 
 ## Objetivos específicos
 
 * Revisar la literatura sobre métodos de imputación de datos faltantes en series temporales univariadas y su relación con tareas de pronóstico.
-* Implementar en R un conjunto representativo de métodos de imputación que abarque técnicas simples (media, mediana, moda), estructurales (descomposición estacional) y enfoques basados en modelos avanzados (Kalman, ARIMA).
+* Implementar en R un conjunto representativo de métodos de imputación que abarque técnicas simples (media, mediana, moda), estructurales (descomposición estacional) y enfoques basados en modelos avanzados (Kalman, ARIMA). VER OBJETIVO
 * Diseñar un esquema de simulación que contemple distintos mecanismos de datos faltantes (MCAR, MAR temporal y MNAR), así como diferentes patrones de ausencia (dispersos y en bloques) y niveles de pérdida de información.
 * Construir un pipeline de procesamiento reproducible que integre de forma secuencial la generación de datos faltantes, la aplicación de técnicas de imputación, el ajuste de modelos de series temporales y la generación de predicciones.
 * Comparar la eficacia de los métodos mediante el uso de métricas de error de imputación (RMSE, MAE y MAPE) en conjunto con métricas de desempeño de pronóstico para horizontes de tiempo de corto y mediano plazo (h=1, 3, 6 y 12).
