@@ -61,6 +61,27 @@ introducir_bloques <- function(y, tam_bloque = 6, n_bloques = 3) {
   return(y_na)
 }
 
+# Funcion alternativa
+
+introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
+  y_na <- y
+  n <- length(y)
+  total_na <- ceiling(prop * n)  # cantidad total de NA a introducir
+  na_actual <- 0
+    while (na_actual < total_na) {
+    tam_bloque <- sample(tam_min:tam_max, 1)
+    if (na_actual + tam_bloque > total_na) {
+      tam_bloque <- total_na - na_actual
+    }
+    inicio <- sample(1:(n - tam_bloque + 1), 1)
+    indices <- inicio:(inicio + tam_bloque - 1)
+    nuevos_na <- sum(!is.na(y_na[indices]))
+    y_na[indices] <- NA
+    na_actual <- na_actual + nuevos_na
+  }
+    return(y_na)
+}
+
 #-------------------------------------------------------------------------------
 # En picos
 introducir_picos <- function(y, percentil = 0.8, prop = 0.5) {
