@@ -446,3 +446,65 @@ resultados_tabla %>%
   row_spec(0, bold = TRUE, background = "#F0F8FF")
 ```
 
+```{r tabla-8}
+resultados_tabla <- readRDS("Resultados/resultados_MCAR_bloques_10_ETS.rds")
+
+rownames(resultados_tabla) <- NULL
+
+resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  mutate(across(where(is.numeric), ~ cell_spec(.x, 
+                                               bold = (.x == min(.x, na.rm = TRUE)),
+                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
+                                               format = "latex"))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "lcccccc", 
+    booktabs = TRUE,   
+    linesep = "",
+    caption = "Resultados de pronóstico con modelo ETS (Escenario 10\\% MCAR en bloques)",
+    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  )%>%
+  add_header_above(
+    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+
+```{r tabla-9}
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_bloques_10_PROPHET.rds")
+
+resultados_prophet <- resultados_prophet[, -1]
+rownames(resultados_prophet) <- NULL
+
+resultados_prophet %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "ccc",
+    booktabs = TRUE,
+    caption = "Resultados de pronóstico con modelo Prophet (Escenario 10\\% MCAR en bloques)",
+    col.names = c("RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c("Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = "#CAE1FF"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```

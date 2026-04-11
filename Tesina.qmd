@@ -74,7 +74,7 @@ Las series temporales univariadas constituyen una herramienta fundamental para e
 
 El presente trabajo tiene como objetivo evaluar y comparar distintos métodos de imputación de datos faltantes en series temporales univariadas, incorporando como criterio principal el desempeño de pronóstico posterior, bajo el enfoque conocido como *forecast-after-imputation*. A diferencia de gran parte de la literatura existente, que se centra en la calidad de los datos imputados, este estudio analiza el impacto de las distintas técnicas de imputación sobre la capacidad predictiva de los modelos ajustados a partir de las series completas.
 
-Para ello, se propone un esquema de simulación basado en series temporales completas a las que se les introducen valores faltantes de manera artificial, considerando distintos mecanismos de ausencia, patrones de faltantes y niveles de pérdida de información. Sobre estos datos incompletos se aplican diversos métodos de imputación, que incluyen tanto enfoques simples como técnicas más avanzadas adaptadas a la estructura temporal de los datos. Posteriormente, se ajustan modelos de series temporales y se evalúa su desempeño mediante métricas de error de pronóstico, tales como RMSE, MAE y MAPE, considerando distintos horizontes de predicción y un enfoque de evaluación fuera de muestra.
+Para ello, se propone un esquema de simulación basado en series temporales completas a las que se les introducen valores faltantes de manera artificial, considerando distintos mecanismos de ausencia, patrones de observaciones faltantes y niveles de pérdida de información. Sobre estos datos incompletos se aplican diversos métodos de imputación, que incluyen tanto enfoques simples como técnicas más avanzadas adaptadas a la estructura temporal de los datos. Posteriormente, se ajustan modelos de series temporales y se evalúa su desempeño mediante métricas de error de pronóstico, tales como RMSE (*Root Mean Square Error*), MAE (*Mean Absolute Error*) y MAPE (*Mean Absolute Percentage Error*), considerando distintos horizontes de predicción y un enfoque de evaluación fuera de muestra.
 
 Los resultados obtenidos permiten analizar cómo la elección del método de imputación influye en la precisión de los pronósticos, evidenciando que no existe una técnica universalmente superior en todos los escenarios considerados, sino que su desempeño depende de las características de la serie y del tipo de datos faltantes. En particular, se identifican escenarios en los que ciertos métodos resultan más adecuados cuando el objetivo principal es mejorar la capacidad predictiva.
 
@@ -121,7 +121,7 @@ El objetivo principal de la tesina es analizar y comparar distintos métodos de 
 * Revisar la literatura sobre métodos de imputación de datos faltantes en series temporales univariadas y su relación con tareas de pronóstico.
 * Seleccionar un conjunto representativo de métodos de imputación que incluya técnicas simples, métodos basados en la estructura temporal de la serie y enfoques basados en modelos.
 * Diseñar un esquema de simulación que contemple distintos mecanismos de datos faltantes (MCAR, MAR temporal y MNAR), así como diferentes patrones de ausencia (dispersos y en bloques) y niveles de pérdida de información.
-* Construir un pipeline de procesamiento reproducible que integre de forma secuencial la generación de datos faltantes, la aplicación de técnicas de imputación, el ajuste de modelos de series temporales y la generación de predicciones.
+* Construir un *pipeline* de procesamiento reproducible que integre de forma secuencial la generación de datos faltantes, la aplicación de técnicas de imputación, el ajuste de modelos de series temporales y la generación de predicciones.
 * Comparar la eficacia de los métodos mediante el uso de métricas de error de imputación (RMSE, MAE y MAPE) en conjunto con métricas de desempeño de pronóstico para horizontes de tiempo de corto y mediano plazo (h=1, 3, 6 y 12).
 * Validar el desempeño de los métodos mediante su aplicación a series temporales reales.
 * Derivar recomendaciones prácticas fundamentadas en los resultados obtenidos, que permitan identificar qué técnicas de imputación resultan más adecuadas según la estructura de la serie y el objetivo específico de mejorar la predicción.
@@ -132,11 +132,134 @@ El objetivo principal de la tesina es analizar y comparar distintos métodos de 
 
 ## Conceptos básicos de series de tiempo
 
-Una serie temporal se define como una secuencia de observaciones ordenadas en el tiempo calendario, resultado de registrar los valores de una variable en intervalos generalmente regulares a lo largo del tiempo.”. Estos intervalos de tiempo definen la periodicidad (diaria, mensual, anual, etc.). Una característica fundamental de las series temporales es la dependencia entre sus observaciones, lo que implica que el orden en que estas ocurren resulta relevante para su análisis. En consecuencia, los métodos estadísticos basados en el supuesto de independencia entre observaciones no son directamente aplicables, por lo que se requieren enfoques específicos que tengan en cuenta la estructura temporal de los datos.
+Una serie temporal se define como una secuencia de observaciones ordenadas en el tiempo calendario, resultado de registrar los valores de una variable en intervalos generalmente regulares a lo largo del tiempo. Estos intervalos de tiempo definen la periodicidad (diaria, mensual, anual, etc.). Una característica fundamental de las series temporales es la dependencia entre sus observaciones, lo que implica que el orden en que estas ocurren resulta relevante para su análisis. En consecuencia, los métodos estadísticos basados en el supuesto de independencia entre observaciones no son directamente aplicables, por lo que se requieren enfoques específicos que tengan en cuenta la estructura temporal de los datos.
 
 Formalmente, una serie temporal se define como un conjunto de variables aleatorias indexadas en el tiempo, ${Y_1,…,Y_T}$. En este sentido, una serie temporal observada se denota por ${y_1,…,y_T}$, donde el subíndice $i$ indica el tiempo al que pertenece la observación $y_i$. El primer valor observado $y_1$ puede interpretarse como una realización de la variable aleatoria $Y_1$. Del mismo modo, $y_2$ es una realización de $Y_2$ y así sucesivamente. Las variables aleatorias $Y_1$, $Y_2$,…, $Y_T$ no necesariamente son idénticamente distribuidas.
 
 Los fenómenos observados mediante series temporales pueden clasificarse en dos clases. Los primeros son los que toman valores estables en el tiempo alrededor de un nivel constante, sin mostrar una tendencia a crecer o a decrecer a largo plazo. Estos procesos se denominan estacionarios. Por otro lado, existen los procesos no estacionarios, que son aquellos que pueden mostrar tendencia, estacionalidad y otros efectos evolutivos en el tiempo. En las series estacionarias, la media y varianza se mantienen constantes en el tiempo y la covarianza entre observaciones depende únicamente del rezago y no del tiempo en sí, mientras que en las no estacionarias, estas características cambian a través del tiempo. 
+
+Para un proceso $\{Y_t: t = 0, \pm 1, \pm 2, \dots\}$ se define:
+
+- La función media del proceso: $E(Y_t) = \mu_t$.
+- La función varianza del proceso: $\sigma_t^2 = E(Y_t-\mu_t)^2$.
+- La función covarianza entre $Y_{t_1}$ y $Y_{t_2}$: $\gamma(t_1,t_2)=E(Y_{t_1}-\mu_{t_1})(Y_{t_2}-\mu_{t_2})$
+
+En un proceso estacionario resulta:
+
+- $\mu_t=\mu$ $\forall t$.
+- $\sigma_t^2=\sigma^2$ $\forall t$.
+- $\gamma(t_1,t_2)=\gamma(t_1+k,t_2+k)$ $\forall t_1,t_2$ y $k$
+
+En este contexto, resulta útil descomponer una serie temporal en sus principales componentes no observables, ya que estos permiten interpretar y modelar su comportamiento a lo largo del tiempo. En particular, la presencia de tendencia, estacionalidad, ciclos y un componente aleatorio está estrechamente relacionada con la noción de no estacionariedad, dado que estos elementos introducen cambios sistemáticos en la media o en la estructura de dependencia de la serie. A continuación, se presentan definiciones más precisas de estos componentes, fundamentales para el análisis y modelado de series temporales.
+
+### Tendencia 
+
+La tendencia representa el comportamiento a largo plazo de una serie temporal, reflejando la evolución sostenida de la variable a lo largo del tiempo. Este componente describe la dirección general en la que se desplazan los datos, pudiendo manifestarse como un crecimiento, decrecimiento o estabilidad en el nivel medio de la serie. La tendencia no necesariamente es lineal, ya que puede presentar formas más complejas, como curvaturas o cambios en la pendiente, asociados a transformaciones estructurales del fenómeno analizado.
+
+La presencia de tendencia implica que la media de la serie no permanece constante en el tiempo, lo que constituye una fuente de no estacionariedad. La identificación y modelado de la tendencia resultan fundamentales, ya que permiten separar el comportamiento estructural de largo plazo de otras fluctuaciones de menor escala. En muchos contextos aplicados, la tendencia se asocia a factores como crecimiento económico, cambios tecnológicos o evolución demográfica, entre otros.
+
+### Componente estacional
+
+La estacionalidad se refiere a la existencia de patrones que se repiten de manera sistemática en intervalos de tiempo fijos y conocidos. Estos patrones suelen estar asociados a factores externos recurrentes, como las estaciones del año, los meses, los días de la semana o incluso las horas dentro del día. A diferencia de otros componentes, la estacionalidad presenta una periodicidad constante, lo que permite su identificación mediante herramientas descriptivas y su modelado a través de métodos específicos.
+
+Se dice que una serie es estacional cuando su valor esperado no es constante, pero varía con una pauta cíclica. En concreto, si:
+$$E(y_t)=E(y_{t+s})$$
+se dice que la serie tiene una estacionalidad de periodo $s$. El periodo estacional, $s$, define el número de observaciones que forma el ciclo estacional. Por ejemplo, $s=12$ para series mensuales, $s=4$ para series trimestrales, etc. Se supone que el valor de $s$ es fijo en la serie. Es importante notar que puede existir mas de un tipo de estacionalidad en una serie. 
+
+Desde una perspectiva analítica, la estacionalidad introduce variaciones sistemáticas en la serie que dependen del momento dentro del ciclo temporal considerado. Esto implica que observaciones correspondientes a un mismo período dentro de distintos ciclos (por ejemplo, el mismo mes en diferentes años) tienden a presentar comportamientos similares. La adecuada identificación de este componente es esencial, ya que su omisión puede distorsionar el análisis de la tendencia y afectar la precisión de los modelos de pronóstico.
+
+### Componente ciclo
+
+Los ciclos corresponden a fluctuaciones de la serie temporal que se desarrollan en horizontes de mediano y largo plazo, pero que no presentan una periodicidad fija ni conocida. A diferencia de la estacionalidad, cuya duración es constante, los ciclos pueden variar en su extensión, intensidad y forma, lo que dificulta su identificación y modelado. Este componente refleja cambios en la dinámica subyacente del fenómeno que no responden a patrones regulares, sino a procesos más complejos.
+
+En muchos casos, los ciclos se asocian a fenómenos económicos, como expansiones y recesiones, aunque también pueden aparecer en otros contextos. Su duración suele ser mayor a la de los efectos estacionales y, en general, no existe un período predeterminado que permita anticipar su repetición. Desde el punto de vista del análisis de series temporales, los ciclos representan una fuente adicional de variabilidad que puede influir en la estructura de dependencia de la serie y en su comportamiento a largo plazo.
+
+### Componente aleatorio
+
+El componente aleatorio, también denominado irregular o ruido, recoge la variabilidad de la serie temporal que no puede ser explicada por los componentes sistemáticos como la tendencia, la estacionalidad o los ciclos. Este componente representa fluctuaciones impredecibles originadas por factores no observados, errores de medición o variaciones inherentes al fenómeno bajo estudio.
+
+En términos estadísticos, suele modelarse como un proceso estocástico con media cero y varianza constante, aunque en la práctica puede presentar estructuras más complejas, como heterocedasticidad o dependencia temporal. A diferencia de los componentes anteriores, el componente aleatorio no presenta una estructura sistemática identificable, lo que limita la capacidad de modelado determinístico. Sin embargo, su correcta caracterización es fundamental, ya que determina el nivel de incertidumbre asociado al análisis y establece un límite natural a la precisión de los pronósticos.
+
+Las irregularidades pueden tener un impacto significativo en la precisión de los modelos de series temporales y en las previsiones, ya que pueden ocultar las tendencias subyacentes y los patrones de estacionalidad en los datos. 
+
+
+En conjunto, la identificación y análisis de estos componentes permiten comprender la estructura subyacente de una serie temporal, facilitando tanto su modelado como la formulación de pronósticos más precisos.
+
+Una serie temporal, $Y_1,Y_2,\dots,Y_T$, puede descomponerse en sus componentes fundamentales mediante modelos de descomposición. En particular, el modelo aditivo se expresa como:
+$$Y_t=T_t+E_t+C_t+A_t$$ donde: $T_t$ representa la tendencia, $E_t$ la componente estacional, $C_t$ los ciclos y $A_t$ la componente aleatoria.
+
+Por otro lado, el modelo multiplicativo se define como:
+$$Y_t=T_t\times E_t\times C_t\times A_t$$ el cual resulta más adecuado cuando la magnitud de las variaciones estacionales o cíclicas depende del nivel de la serie.
+ 
+ 
+## Autocorrelación
+
+La autocorrelación es una medida fundamental en el análisis de series temporales que permite cuantificar el grado de dependencia existente entre observaciones de una misma serie en distintos momentos del tiempo. A diferencia de los datos independientes, en una serie temporal los valores suelen estar relacionados con sus propios valores pasados, lo que implica que la información contenida en una observación puede aportar conocimiento sobre observaciones futuras o pasadas. Esta dependencia temporal constituye una de las características distintivas de las series temporales y es clave para su modelado.
+
+El estudio de la autocorrelación resulta esencial en la práctica, ya que proporciona información relevante sobre la estructura interna de la serie y orienta la selección de modelos adecuados para su análisis y pronóstico. En particular, muchas metodologías de modelado de series temporales se basan explícitamente en la forma en que las observaciones se correlacionan a lo largo del tiempo, lo que convierte a la autocorrelación en una herramienta central dentro del análisis estadístico de datos temporales.
+
+### Función de autocorrelación
+
+La función de autocorrelación constituye una herramienta fundamental para el análisis de la dependencia temporal en una serie. Esta función describe cómo se correlacionan las observaciones de la serie con sus propios valores pasados en función del rezago considerado. En particular, permite analizar el grado de asociación lineal entre observaciones separadas por distintos intervalos de tiempo, proporcionando una visión global de la estructura de dependencia de la serie.
+
+Para cada rezago $k$, la función de autocorrelación mide la intensidad de la relación lineal entre 
+$Y_t$ y $Y_{t+k}$, tomando valores comprendidos entre -1 y 1. Valores cercanos a 1 indican una fuerte correlación positiva, mientras que valores próximos a -1 reflejan una correlación negativa. Por su parte, valores cercanos a cero sugieren ausencia de dependencia lineal significativa para ese rezago. En el caso de series temporales estacionarias, la función de autocorrelación depende únicamente del rezago y no del tiempo, lo que simplifica su análisis e interpretación.
+
+Formalmente, la autocorrelación para un rezago 𝑘 se calcula utilizando la siguiente fórmula:
+
+$$\rho_k = \frac{\sum_{t=k+1}^{T} (y_t - \bar{y})(y_{t-k} - \bar{y})}{\sum_{t=1}^{T} (y_t - \bar{y})^2}$$
+
+### Función de autocorrelación parcial
+
+La función de autocorrelación parcial constituye una herramienta complementaria a la función de autocorrelación, permitiendo analizar la dependencia directa entre observaciones de una serie temporal. Mientras que la autocorrelación mide la relación total entre $y_t$ y $y_{t+h}$, la autocorrelación parcial evalúa la relación entre estas dos observaciones una vez eliminada la influencia de los valores intermedios comprendidos entre ambos momentos.
+
+En otras palabras, la autocorrelación parcial mide el grado de dependencia lineal “pura” entre dos observaciones separadas por un rezago $h$, controlando por los efectos de los rezagos menores. Esto permite aislar la contribución específica de cada rezago en la estructura de dependencia de la serie, evitando la superposición de efectos indirectos presentes en la función de autocorrelación.
+
+El análisis de la función de autocorrelación parcial resulta especialmente útil en la identificación de modelos de series temporales, en particular en la determinación del orden de los modelos autorregresivos. De este modo, junto con la función de autocorrelación, constituye una herramienta fundamental en el análisis exploratorio y en el proceso de modelado de series temporales.
+
+## Datos faltantes en series temporales
+
+En el desarrollo teórico de numerosos modelos y técnicas estadísticas, a menudo no se consideran ciertas situaciones que surgen en la práctica, entre las cuales se destaca la presencia de datos faltantes, también denominados valores perdidos o incompletos. Esta problemática es especialmente frecuente en el análisis de series temporales, donde es habitual encontrar observaciones ausentes dentro de la secuencia de datos.
+
+Desde un punto de vista metodológico, no todos los datos faltantes presentan las mismas características ni tienen el mismo impacto sobre el análisis. En particular, la forma en que se generan los valores ausentes, conocida como mecanismo de faltantes, resulta fundamental para determinar el enfoque más adecuado para su tratamiento. Ignorar este aspecto puede conducir a la aplicación de métodos inapropiados y, en consecuencia, a conclusiones erróneas.
+
+En este sentido, la literatura estadística distingue tres mecanismos principales de generación de datos faltantes: faltantes completamente al azar (MCAR), faltantes al azar (MAR) y faltantes no al azar (MNAR). Cada uno de estos mecanismos implica distintos supuestos sobre la relación entre la ausencia de datos y la información observada o no observada, lo que influye directamente en la elección y el desempeño de los métodos de imputación.
+
+### Tipos de datos faltantes
+
+Hay varios tipos de observaciones faltantes:
+
+* Datos faltantes completamente al azar (Missing Completely at Random, MCAR). Los datos faltantes siguen un patrón aleatorio; la probabilidad de que un valor esté perdido es independiente tanto del valor de esta variable como del valor de otras variables del conjunto de datos. La ausencia de información no procede de ninguna variable presente en la matriz de datos, ya que la base de datos se interpreta como una matriz en donde los renglones son las unidades de observación y las columnas representan a las variables de interés. Hay que señalar que, en la práctica, la hipótesis de este supuesto no siempre es satisfactoria porque la falta de respuesta se asocia a características personales.
+
+* Datos faltantes al azar (Missing at Random, MAR). La probabilidad de que una respuesta sea dato faltante es independiente de los valores de la variable pero es dependiente de los valores de otras variables del conjunto de datos. En suma, la ausencia de datos está asociada a variables presentes en la matriz de datos. Por ejemplo, este supuesto, es usual en las encuestas de hogares que estudian el nivel socioeconómico, donde la falta de respuesta en la variable ingreso en las familias está correlacionada con sus ingresos y por lo tanto no se cumple el supuesto. En cambio, cuando la omisión ocurre en la categoría ocupacional, la falta de información no necesariamente está correlacionada con el nivel de ingresos de las personas y por lo tanto sí se cumple el supuesto.
+
+* Datos no faltantes al azar (Missing not at random, MNAR). La probabilidad de que una respuesta a una variable sea dato faltante es dependiente de los valores de la variable. Por ejemplo, en el estudio de las variables peso y edad; los sujetos con mayores valores de peso tienen un porcentaje de datos faltantes más elevado en esta variable para aquellos individuos con la misma edad. Este tipo de dato faltante también se denomina no ignorable.
+
+Para series temporales univariadas, el panorama de los mecanismos de datos faltantes es ligeramente diferente. A primera vista, solo hay una variable en los datos. Sin embargo, el tiempo (que se da implícitamente) debe tratarse como una variable al determinar el mecanismo de datos faltantes de un conjunto de datos. Otra diferencia radica en que los algoritmos de imputación de series temporales no necesitan basarse únicamente en covariables para la estimación de valores faltantes, sino que también pueden utilizar las características de las series temporales. Esto facilita considerablemente la estimación de valores faltantes para datos MCAR. Para la imputación de series temporales univariadas, MAR y MCAR son prácticamente iguales.
+
+En un escenario de datos faltantes completamente al azar (MCAR), los puntos de datos ausentes ocurren de manera aleatoria, lo que implica que la probabilidad de que falte una observación es independiente tanto del momento de la observación en la serie como del valor de la observación misma. Por otro lado, en el caso de datos faltantes que no faltan al azar (MNAR), la probabilidad de que falte una observación puede depender del momento en que se encuentra esa observación en la serie, así como del valor de la propia observación.
+
+## Métodos de imputación
+
+La existencia de valores faltantes introduce diversas dificultades en el análisis, ya que puede afectar la estimación de parámetros, distorsionar la identificación de patrones y limitar la aplicación de ciertos métodos que requieren series completas. En consecuencia, su tratamiento constituye una etapa fundamental dentro del preprocesamiento de los datos. Entre las distintas estrategias disponibles, la imputación se presenta como una de las más utilizadas.
+
+Se denomina imputación al proceso que utiliza la información procedente de la muestra para asignar un valor a aquellos registros con valor ausente, ya sea porque se carece de información o porque se detecta que algunos de los valores obtenidos no se corresponden con el comportamiento esperado. Existen diversos métodos de imputación que difieren tanto en la información que utilizan como en la forma en que generan los valores imputados. La elección del método más adecuado dependerá de las características de la serie, la estructura de los datos faltantes y el objetivo del análisis.
+
+La imputación de datos faltantes es más sencilla cuando estos ocurren completamente al azar (MCAR). Esto se debe a que en el caso de MNAR, las observaciones faltantes pueden formar fragmentos lo suficientemente grandes como para ocultar los componentes estructurales de las series temporales. Sin embargo, si la serie temporal presenta una estructura temporal bien definida, los métodos de imputación que aprovechan características como la estacionalidad, los ciclos y la autocorrelación pueden tener una ventaja sobre otros métodos más simples.
+
+Una observación muy importante es que la eficiencia de cada método depende del conjunto de datos. Esto significa que cada técnica funciona de manera diferente dependiendo de la estructura de cada serie temporal; en otras palabras, no existe un método único que se adapte a todos los tipos de datos. Esto debe tomarse seriamente en cuenta al intentar elegir un método apropiado para la imputación de múltiples datos en series temporales. Por lo tanto, es necesario analizar las características específicas de la serie temporal con datos faltantes y, a partir de ese análisis, seleccionar el método de imputación que mejor se adapte a dicha estructura.
+
+A continuación, se describen los métodos de imputación que serán evaluados en cada situación.
+
+### Valor aleatorio
+
+Para cada valor faltante en la serie temporal, se selecciona aleatoriamente uno de los valores observados de la serie (todos con igual probabilidad de ser seleccionados). El procedimiento se repite para cada dato faltante, lo que puede resultar en diferentes imputaciones para distintos valores faltantes, incluso dentro de la misma brecha.
+
+
+
+
+
+
 
 \newpage
 
