@@ -50,6 +50,8 @@ resaltar_min <- function(x, x_num) {
 }
 ```
 
+# Aplicación
+
 ```{r}
 #Carga de datos
 datos <- read_csv("demanda.csv", show_col_types = FALSE) %>%
@@ -69,16 +71,14 @@ serie_test <- window(serie, start = c(2025, 1))
 #serie_test tiene observaciones que se guardan para luego evaluar pronosticos
 ```
 
-# Introducción
-
 La electricidad constituye un insumo esencial para el funcionamiento de la economía y el bienestar social. En particular, el análisis de la demanda de energía eléctrica resulta de gran interés para los organismos reguladores, las empresas proveedoras y los investigadores, ya que permite comprender los patrones de consumo.
 
-En este trabajo se utilizará una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación. La serie abarca mediciones mensuales desde enero de 2001 hasta diciembre de 2025, y cuenta con 300 observaciones, que reflejan el consumo eléctrico total del país en gigavatios-hora (en miles de GWh). A fines prácticos, se trabajará con observaciones desde enero de 2010 hasta diciembre de 2025
+En este trabajo se utilizará una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación Argentina. La serie abarca mediciones mensuales desde enero de 2001 hasta diciembre de 2025, y cuenta con 300 observaciones, que reflejan el consumo eléctrico total del país en gigavatios-hora (en miles de GWh). A fines prácticos, se trabajará con observaciones desde enero de 2010 hasta diciembre de 2025
 
 
-# Análisis descriptivo
+## Análisis descriptivo
 
-Se realizó una partición de la serie temporal en dos subconjuntos. Las observaciones comprendidas entre enero de 2010 y diciembre de 2024 conforman el conjunto de entrenamiento, utilizado para la especificación y ajuste del modelo. Por su parte, los datos de 2025 se reservaron como conjunto de prueba para evaluar la capacidad predictiva ex-post del modelo seleccionado.
+Se realizó una partición de la serie temporal en dos subconjuntos. Las observaciones comprendidas entre enero de 2010 y diciembre de 2024 conforman el conjunto de entrenamiento, utilizado para la especificación y ajuste del modelo. Por su parte, los datos de 2025 se reservaron como conjunto de prueba para evaluar la capacidad predictiva del modelo seleccionado sobre datos no utilizados en su estimación.
 
 ```{r fig-grafico1, fig.cap="Demanda mensual de energía eléctrica en Argentina (2010–2024)", fig.height=3, fig.width=5}
 ggplot() +
@@ -111,9 +111,9 @@ ggplot() +
   )
 ```
 
-La @fig-grafico1 muestra un aumento general de la demanda a lo largo del periodo analizado; sin embargo, la tendencia no es estrictamente lineal.
+La @fig-grafico1 muestra una tendencia creciente en la demanda a lo largo del período analizado, aunque dicha tendencia no es estrictamente lineal.
 
-En 2020 se observa un evento atípico: la demanda tuvo un descenso muy marcado en abril. Por otro lado, en marzo de 2023 se presentó un pico de demanda, ya que entre el 1 y el 19 de ese mes se registró una ola de calor extrema en el este del país (La Nación, 2024).
+En 2020 se observa un evento atípico: un quiebre o shock estructural asociado a la pandemia de COVID-19. Por otro lado, en marzo de 2023 se observa un pico de demanda asociado a condiciones climáticas extremas (ola de calor) (La Nación, 2024).
 
 ```{r fig-grafico2, fig.cap= "Distribución de la demanda eléctrica por año", fig.height=3, fig.width=5.5}
 demanda_filtrada <- subset(datos, 2010 <= anio & anio < 2025)
@@ -129,7 +129,7 @@ ggplot(demanda_filtrada, aes(x = factor(anio), y = demanda)) +
   )
 ``` 
 
-En la @fig-grafico2 se observa que antes del 2015 la demanda fue aumentando con el paso de los años, entre 2015 y 2019 la demanda se mantuvo relativamente estable, mientras que en 2020 se produjo una caída marcada con mayor dispersión, asociada al impacto de la pandemia. A partir de 2021, la mediana anual comienza a incrementarse de forma sostenida, alcanzando máximos en 2023–2024. Asimismo, en los años más recientes se evidencia una mayor variabilidad mensual, lo cual refleja la aparición de episodios extremos de consumo, como olas de calor e inviernos más intensos.
+En la @fig-grafico2 se observa que antes del 2015 la demanda fue aumentando con el paso de los años, entre 2015 y 2019 la demanda se mantuvo relativamente estable, mientras que en 2020 se produjo una caída marcada con mayor dispersión, asociada al impacto de la pandemia. A partir de 2021, la mediana anual comienza a incrementarse de forma sostenida, alcanzando máximos en 2023–2024. Asimismo, en los años más recientes se evidencia una mayor variabilidad intraanual, lo cual refleja la aparición de episodios extremos de consumo, como olas de calor e inviernos más intensos.
 
 ```{r fig-grafico3, fig.cap= "Gráfico estacional de la serie por año", fig.height=3, fig.width=5.5}
 p <- ggseasonplot(serie_train) +
@@ -229,7 +229,7 @@ Por otro lado, en la @fig-grafico6 se observan valores distintos de cero en los 
 Al igual que en la ACF, aparecen picos en rezagos estacionales (12, 24, …), lo cual confirma la estacionalidad anual.
 
 
-# Resultados
+## Resultados
 
 ```{r tabla-1}
 res_arima <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h3.rds")
