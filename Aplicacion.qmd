@@ -38,6 +38,16 @@ library(lubridate)
 library(readr)
 library(tseries)
 library(zoo)
+
+#Funciones
+resaltar_min <- function(x, x_num) {
+  cell_spec(
+    sprintf("%.3f", x),
+    bold = (x_num == min(x_num, na.rm = TRUE)),
+    color = ifelse(x_num == min(x_num, na.rm = TRUE), "#1E90FF", "black"),
+    format = "latex"
+  )
+}
 ```
 
 ```{r}
@@ -222,74 +232,83 @@ Al igual que en la ACF, aparecen picos en rezagos estacionales (12, 24, …), lo
 # Resultados
 
 ```{r tabla-1}
-resultados_tabla <- readRDS("Resultados/resultados_MCAR_10_ARIMA.rds")
+res_arima <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h3.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_10_ETS_h3.rds")
 
-rownames(resultados_tabla) <- NULL
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
 
 resultados_tabla %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
-  mutate(across(where(is.numeric), ~ cell_spec(.x, 
-                                               bold = (.x == min(.x, na.rm = TRUE)),
-                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
-                                               format = "latex"))) %>%
   kable(
-    format = "latex", 
+    format = "latex",
     escape = FALSE,
-    align = "lcccccc", 
-    booktabs = TRUE,   
+    align = "lccccccccc",
+    booktabs = TRUE,
     linesep = "",
-    caption = "Resultados de pronóstico con modelo ARIMA (Escenario 10\\% MCAR)",
-    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
+    caption = "Resultados de imputación y pronóstico para h = 3 (Escenario 10\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
   ) %>%
   kable_styling(
     full_width = FALSE,
     position = "center",
-    latex_options = c("scale_down", "HOLD_position") 
+    latex_options = c("scale_down", "HOLD_position")
   ) %>%
   add_header_above(
-    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
     bold = TRUE,
-    background = c("white", "#CAE1FF", "#CAE1FF")
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
   ) %>%
   row_spec(0, bold = TRUE, background = "#F0F8FF")
 ```
 
 ```{r tabla-2}
-resultados_tabla <- readRDS("Resultados/resultados_MCAR_10_ETS.rds")
-
-rownames(resultados_tabla) <- NULL
-
-resultados_tabla %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
-  mutate(across(where(is.numeric), ~ cell_spec(.x, 
-                                               bold = (.x == min(.x, na.rm = TRUE)),
-                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
-                                               format = "latex"))) %>%
-  kable(
-    format = "latex", 
-    escape = FALSE,
-    align = "lcccccc", 
-    booktabs = TRUE,   
-    linesep = "",
-    caption = "Resultados de pronóstico con modelo ETS (Escenario 10\\% MCAR)",
-    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
-  ) %>%
-  kable_styling(
-    full_width = FALSE,
-    position = "center",
-    latex_options = c("scale_down", "HOLD_position") 
-  )%>%
-  add_header_above(
-    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
-    bold = TRUE,
-    background = c("white", "#CAE1FF", "#CAE1FF")
-  ) %>%
-  row_spec(0, bold = TRUE, background = "#F0F8FF")
-```
-
-
-```{r tabla-3}
-resultados_prophet <- readRDS("Resultados/resultados_MCAR_10_PROPHET.rds")
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h3.rds")
 
 resultados_prophet <- resultados_prophet[, -1]
 rownames(resultados_prophet) <- NULL
@@ -301,7 +320,7 @@ resultados_prophet %>%
     escape = FALSE,
     align = "ccc",
     booktabs = TRUE,
-    caption = "Resultados de pronóstico con modelo Prophet (Escenario 10\\% MCAR)",
+    caption = "Resultados de pronóstico con modelo Prophet para h = 3 (Escenario 10\\% MCAR)",
     col.names = c("RMSE", "MAE", "MAPE")
   ) %>%
   kable_styling(
@@ -317,75 +336,84 @@ resultados_prophet %>%
   row_spec(0, bold = TRUE, background = "#F0F8FF")
 ```
 
+```{r tabla-3}
+res_arima <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h3.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_25_ETS_h3.rds")
+
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
+
+resultados_tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Resultados de imputación y pronóstico para h = 3 (Escenario 25\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
 ```{r tabla-4}
-resultados_tabla <- readRDS("Resultados/resultados_MCAR_20_ARIMA.rds")
-
-rownames(resultados_tabla) <- NULL
-
-resultados_tabla %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
-  mutate(across(where(is.numeric), ~ cell_spec(.x, 
-                                               bold = (.x == min(.x, na.rm = TRUE)),
-                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
-                                               format = "latex"))) %>%
-  kable(
-    format = "latex", 
-    escape = FALSE,
-    align = "lcccccc", 
-    booktabs = TRUE,   
-    linesep = "",
-    caption = "Resultados de pronóstico con modelo ARIMA (Escenario 20\\% MCAR)",
-    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
-  ) %>%
-  kable_styling(
-    full_width = FALSE,
-    position = "center",
-    latex_options = c("scale_down", "HOLD_position") 
-  ) %>%
-  add_header_above(
-    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
-    bold = TRUE,
-    background = c("white", "#CAE1FF", "#CAE1FF")
-  ) %>%
-  row_spec(0, bold = TRUE, background = "#F0F8FF")
-```
-
-```{r tabla-5}
-resultados_tabla <- readRDS("Resultados/resultados_MCAR_20_ETS.rds")
-
-rownames(resultados_tabla) <- NULL
-
-resultados_tabla %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
-  mutate(across(where(is.numeric), ~ cell_spec(.x, 
-                                               bold = (.x == min(.x, na.rm = TRUE)),
-                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
-                                               format = "latex"))) %>%
-  kable(
-    format = "latex", 
-    escape = FALSE,
-    align = "lcccccc", 
-    booktabs = TRUE,   
-    linesep = "",
-    caption = "Resultados de pronóstico con modelo ETS (Escenario 20\\% MCAR)",
-    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
-  ) %>%
-  kable_styling(
-    full_width = FALSE,
-    position = "center",
-    latex_options = c("scale_down", "HOLD_position") 
-  )%>%
-  add_header_above(
-    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
-    bold = TRUE,
-    background = c("white", "#CAE1FF", "#CAE1FF")
-  ) %>%
-  row_spec(0, bold = TRUE, background = "#F0F8FF")
-```
-
-
-```{r tabla-6}
-resultados_prophet <- readRDS("Resultados/resultados_MCAR_20_PROPHET.rds")
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h3.rds")
 
 resultados_prophet <- resultados_prophet[, -1]
 rownames(resultados_prophet) <- NULL
@@ -397,7 +425,112 @@ resultados_prophet %>%
     escape = FALSE,
     align = "ccc",
     booktabs = TRUE,
-    caption = "Resultados de pronóstico con modelo Prophet (Escenario 20\\% MCAR)",
+    caption = "Resultados de pronóstico con modelo Prophet para h = 3 (Escenario 25\\% MCAR)",
+    col.names = c("RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c("Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = "#CAE1FF"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-5}
+res_arima <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h3.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_40_ETS_h3.rds")
+
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
+
+resultados_tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Resultados de imputación y pronóstico para h = 3 (Escenario 40\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-6}
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h3.rds")
+
+resultados_prophet <- resultados_prophet[, -1]
+rownames(resultados_prophet) <- NULL
+
+resultados_prophet %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "ccc",
+    booktabs = TRUE,
+    caption = "Resultados de pronóstico con modelo Prophet para h = 3 (Escenario 40\\% MCAR)",
     col.names = c("RMSE", "MAE", "MAPE")
   ) %>%
   kable_styling(
@@ -414,74 +547,83 @@ resultados_prophet %>%
 ```
 
 ```{r tabla-7}
-resultados_tabla <- readRDS("Resultados/resultados_MCAR_bloques_10_ARIMA.rds")
+res_arima <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h6.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_10_ETS_h6.rds")
 
-rownames(resultados_tabla) <- NULL
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+    
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+    
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
 
 resultados_tabla %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
-  mutate(across(where(is.numeric), ~ cell_spec(.x, 
-                                               bold = (.x == min(.x, na.rm = TRUE)),
-                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
-                                               format = "latex"))) %>%
   kable(
-    format = "latex", 
+    format = "latex",
     escape = FALSE,
-    align = "lcccccc", 
-    booktabs = TRUE,   
+    align = "lccccccccc",
+    booktabs = TRUE,
     linesep = "",
-    caption = "Resultados de pronóstico con modelo ARIMA (Escenario 10\\% MCAR en bloques)",
-    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
+    caption = "Resultados de imputación y pronóstico para h = 6 (Escenario 10\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
   ) %>%
   kable_styling(
     full_width = FALSE,
     position = "center",
-    latex_options = c("scale_down", "HOLD_position") 
+    latex_options = c("scale_down", "HOLD_position")
   ) %>%
   add_header_above(
-    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
     bold = TRUE,
-    background = c("white", "#CAE1FF", "#CAE1FF")
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
   ) %>%
   row_spec(0, bold = TRUE, background = "#F0F8FF")
 ```
 
 ```{r tabla-8}
-resultados_tabla <- readRDS("Resultados/resultados_MCAR_bloques_10_ETS.rds")
-
-rownames(resultados_tabla) <- NULL
-
-resultados_tabla %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
-  mutate(across(where(is.numeric), ~ cell_spec(.x, 
-                                               bold = (.x == min(.x, na.rm = TRUE)),
-                                               color = ifelse(.x == min(.x, na.rm = TRUE), "#436EEE", "black"),
-                                               format = "latex"))) %>%
-  kable(
-    format = "latex", 
-    escape = FALSE,
-    align = "lcccccc", 
-    booktabs = TRUE,   
-    linesep = "",
-    caption = "Resultados de pronóstico con modelo ETS (Escenario 10\\% MCAR en bloques)",
-    col.names = c("Método", "RMSE", "MAE", "MAPE", "RMSE", "MAE", "MAPE")
-  ) %>%
-  kable_styling(
-    full_width = FALSE,
-    position = "center",
-    latex_options = c("scale_down", "HOLD_position") 
-  )%>%
-  add_header_above(
-    c(" " = 1, "Error de imputación" = 3, "Error de pronóstico" = 3), 
-    bold = TRUE,
-    background = c("white", "#CAE1FF", "#CAE1FF")
-  ) %>%
-  row_spec(0, bold = TRUE, background = "#F0F8FF")
-```
-
-
-```{r tabla-9}
-resultados_prophet <- readRDS("Resultados/resultados_MCAR_bloques_10_PROPHET.rds")
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h6.rds")
 
 resultados_prophet <- resultados_prophet[, -1]
 rownames(resultados_prophet) <- NULL
@@ -493,7 +635,7 @@ resultados_prophet %>%
     escape = FALSE,
     align = "ccc",
     booktabs = TRUE,
-    caption = "Resultados de pronóstico con modelo Prophet (Escenario 10\\% MCAR en bloques)",
+    caption = "Resultados de pronóstico con modelo Prophet para h = 6 (Escenario 10\\% MCAR)",
     col.names = c("RMSE", "MAE", "MAPE")
   ) %>%
   kable_styling(
@@ -507,4 +649,755 @@ resultados_prophet %>%
     background = "#CAE1FF"
   ) %>%
   row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-9}
+res_arima <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h6.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_25_ETS_h6.rds")
+
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+    
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+    
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
+
+resultados_tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Resultados de imputación y pronóstico para h = 6 (Escenario 25\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-10}
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h6.rds")
+
+resultados_prophet <- resultados_prophet[, -1]
+rownames(resultados_prophet) <- NULL
+
+resultados_prophet %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "ccc",
+    booktabs = TRUE,
+    caption = "Resultados de pronóstico con modelo Prophet para h = 6 (Escenario 25\\% MCAR)",
+    col.names = c("RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c("Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = "#CAE1FF"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-11}
+res_arima <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h6.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_40_ETS_h6.rds")
+
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+    
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+    
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
+
+resultados_tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Resultados de imputación y pronóstico para h = 6 (Escenario 40\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-12}
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h6.rds")
+
+resultados_prophet <- resultados_prophet[, -1]
+rownames(resultados_prophet) <- NULL
+
+resultados_prophet %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "ccc",
+    booktabs = TRUE,
+    caption = "Resultados de pronóstico con modelo Prophet para h = 6 (Escenario 40\\% MCAR)",
+    col.names = c("RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c("Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = "#CAE1FF"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-13}
+res_arima <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h12.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_10_ETS_h12.rds")
+
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
+
+resultados_tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Resultados de imputación y pronóstico para h = 12 (Escenario 10\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-14}
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h12.rds")
+
+resultados_prophet <- resultados_prophet[, -1]
+rownames(resultados_prophet) <- NULL
+
+resultados_prophet %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "ccc",
+    booktabs = TRUE,
+    caption = "Resultados de pronóstico con modelo Prophet para h = 12 (Escenario 10\\% MCAR)",
+    col.names = c("RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c("Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = "#CAE1FF"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-15}
+res_arima <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h12.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_25_ETS_h12.rds")
+
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
+
+resultados_tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Resultados de imputación y pronóstico para h = 12 (Escenario 25\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+
+```{r tabla-16}
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h12.rds")
+
+resultados_prophet <- resultados_prophet[, -1]
+rownames(resultados_prophet) <- NULL
+
+resultados_prophet %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "ccc",
+    booktabs = TRUE,
+    caption = "Resultados de pronóstico con modelo Prophet para h = 12 (Escenario 25\\% MCAR)",
+    col.names = c("RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c("Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = "#CAE1FF"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-17}
+res_arima <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h12.rds")
+res_ets   <- readRDS("Resultados/resultados_MCAR_40_ETS_h12.rds")
+
+res_arima <- res_arima %>%
+  rename(
+    RMSE_Imp = RMSE_Imp,
+    MAE_Imp  = MAE_Imp,
+    MAPE_Imp = MAPE_Imp,
+    RMSE_ARIMA = RMSE_Pro,
+    MAE_ARIMA  = MAE_Pro,
+    MAPE_ARIMA = MAPE_Pro
+  )
+
+res_ets <- res_ets %>%
+  rename(
+    RMSE_ETS = RMSE_Pro,
+    MAE_ETS  = MAE_Pro,
+    MAPE_ETS = MAPE_Pro
+  ) %>%
+  select(Metodo, RMSE_ETS, MAE_ETS, MAPE_ETS)
+
+resultados_tabla <- res_arima %>%
+  left_join(res_ets, by = "Metodo")
+
+resultados_num <- resultados_tabla
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+resultados_tabla <- resultados_tabla %>%
+  mutate(
+    RMSE_Imp  = resaltar_min(RMSE_Imp,  resultados_num$RMSE_Imp),
+    MAE_Imp   = resaltar_min(MAE_Imp,   resultados_num$MAE_Imp),
+    MAPE_Imp  = resaltar_min(MAPE_Imp,  resultados_num$MAPE_Imp),
+
+    RMSE_ARIMA = resaltar_min(RMSE_ARIMA, resultados_num$RMSE_ARIMA),
+    MAE_ARIMA  = resaltar_min(MAE_ARIMA,  resultados_num$MAE_ARIMA),
+    MAPE_ARIMA = resaltar_min(MAPE_ARIMA, resultados_num$MAPE_ARIMA),
+
+    RMSE_ETS = resaltar_min(RMSE_ETS, resultados_num$RMSE_ETS),
+    MAE_ETS  = resaltar_min(MAE_ETS,  resultados_num$MAE_ETS),
+    MAPE_ETS = resaltar_min(MAPE_ETS, resultados_num$MAPE_ETS)
+  )
+
+resultados_tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Resultados de imputación y pronóstico para h = 12 (Escenario 40\\% MCAR) ",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "Imputación" = 3,
+      "Pronóstico ARIMA" = 3,
+      "Pronóstico ETS" = 3),
+    bold = TRUE,
+    background = c("white", "#CAE1FF", "#CAE1FF", "#CAE1FF")
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+
+```{r tabla-18}
+resultados_prophet <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h12.rds")
+
+resultados_prophet <- resultados_prophet[, -1]
+rownames(resultados_prophet) <- NULL
+
+resultados_prophet %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  kable(
+    format = "latex", 
+    escape = FALSE,
+    align = "ccc",
+    booktabs = TRUE,
+    caption = "Resultados de pronóstico con modelo Prophet para h = 12 (Escenario 40\\% MCAR)",
+    col.names = c("RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position") 
+  ) %>%
+  add_header_above(
+    c("Error de pronóstico" = 3), 
+    bold = TRUE,
+    background = "#CAE1FF"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#F0F8FF")
+```
+
+```{r tabla-imputacion, results='asis'}
+# Leer uno cualquiera (mismo imputación)
+tabla <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h3.rds")
+
+# Seleccionar solo imputación
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+# Guardar versión numérica
+tabla_num <- tabla
+
+# Función resaltado
+resaltar_min <- function(x, x_num) {
+  cell_spec(
+    sprintf("%.3f", x),
+    bold = (x_num == min(x_num, na.rm = TRUE)),
+    color = ifelse(x_num == min(x_num, na.rm = TRUE), "#1E90FF", "black"),
+    format = "latex"
+  )
+}
+
+# Aplicar formato
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+# Mostrar tabla
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Errores de imputación (Escenario 10\\% MCAR)",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla-arima, results='asis'}
+# Leer archivos
+h3  <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h12.rds")
+
+# Seleccionar solo forecast (no imputación)
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+# Renombrar
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+# Unir
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+# Guardar versión numérica
+tabla_num <- tabla
+
+# Aplicar por bloques
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+# Tabla final
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "10\\% MCAR, pronosticando con ARIMA",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla-ets, results='asis'}
+# Leer archivos
+h3  <- readRDS("Resultados/resultados_MCAR_10_ETS_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_10_ETS_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_10_ETS_h12.rds")
+
+# Seleccionar solo forecast (no imputación)
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+# Renombrar
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+# Unir
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+# Guardar versión numérica
+tabla_num <- tabla
+
+# Aplicar por bloques
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+# Tabla final
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "10\\% MCAR, pronosticando con ETS",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla-prophet, results='asis'}
+# Leer resultados
+h3  <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h12.rds")
+
+# Armar tabla
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+# Formato
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    caption = "10\\% MCAR, pronosticando con Prophet",
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  )
 ```

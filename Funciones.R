@@ -51,17 +51,6 @@ introducir_NA <- function(y, prop = 0.1) {
 
 #-------------------------------------------------------------------------------
 #En bloques
-introducir_bloques <- function(y, tam_bloque = 6, n_bloques = 3) {
-  y_na <- y
-  n <- length(y)
-  for (i in 1:n_bloques) {
-    inicio <- sample(1:(n - tam_bloque), 1)
-    y_na[inicio:(inicio + tam_bloque - 1)] <- NA
-  }
-  return(y_na)
-}
-
-# Funcion alternativa
 
 introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
   y_na <- y

@@ -78,7 +78,7 @@ Para ello, se propone un esquema de simulación basado en series temporales comp
 
 Los resultados obtenidos permiten analizar cómo la elección del método de imputación influye en la precisión de los pronósticos, evidenciando que no existe una técnica universalmente superior en todos los escenarios considerados, sino que su desempeño depende de las características de la serie y del tipo de datos faltantes. En particular, se identifican escenarios en los que ciertos métodos resultan más adecuados cuando el objetivo principal es mejorar la capacidad predictiva.
 
-En conclusión, este trabajo aporta una perspectiva integral para la evaluación de métodos de imputación en series temporales univariadas, integrando el proceso completo desde la imputación hasta el pronóstico. Asimismo, proporciona recomendaciones prácticas orientadas a la selección de técnicas en funció, del objetivo de predicción, contribuyendo al desarrollo de estrategias más robustas para el análisis y la predicción en presencia de datos faltantes.
+En conclusión, este trabajo aporta una perspectiva integral para la evaluación de métodos de imputación en series temporales univariadas, integrando el proceso completo desde la imputación hasta el pronóstico. Asimismo, proporciona recomendaciones prácticas orientadas a la selección de técnicas en función del objetivo de predicción, contribuyendo al desarrollo de estrategias más robustas para el análisis y la predicción en presencia de datos faltantes.
 
 \underline{Palabras clave}: Series temporales univariadas, datos faltantes, imputación, pronóstico, desempeño.
 
@@ -140,14 +140,14 @@ Los fenómenos observados mediante series temporales pueden clasificarse en dos 
 
 Para un proceso $\{Y_t: t = 0, \pm 1, \pm 2, \dots\}$ se define:
 
-- La función media del proceso: $E(Y_t) = \mu_t$.
-- La función varianza del proceso: $\sigma_t^2 = E(Y_t-\mu_t)^2$.
+- La función media del proceso: $E(Y_t) = \mu_t$
+- La función varianza del proceso: $\sigma_t^2 = E(Y_t-\mu_t)^2$
 - La función covarianza entre $Y_{t_1}$ y $Y_{t_2}$: $\gamma(t_1,t_2)=E(Y_{t_1}-\mu_{t_1})(Y_{t_2}-\mu_{t_2})$
 
 En un proceso estacionario resulta:
 
-- $\mu_t=\mu$ $\forall t$.
-- $\sigma_t^2=\sigma^2$ $\forall t$.
+- $\mu_t=\mu$ $\forall t$
+- $\sigma_t^2=\sigma^2$ $\forall t$
 - $\gamma(t_1,t_2)=\gamma(t_1+k,t_2+k)$ $\forall t_1,t_2$ y $k$
 
 En este contexto, resulta útil descomponer una serie temporal en sus principales componentes no observables, ya que estos permiten interpretar y modelar su comportamiento a lo largo del tiempo. En particular, la presencia de tendencia, estacionalidad, ciclos y un componente aleatorio está estrechamente relacionada con la noción de no estacionariedad, dado que estos elementos introducen cambios sistemáticos en la media o en la estructura de dependencia de la serie. A continuación, se presentan definiciones más precisas de estos componentes, fundamentales para el análisis y modelado de series temporales.
@@ -253,17 +253,55 @@ Se denomina imputación al proceso que utiliza la información procedente de la 
 
 La imputación de datos faltantes es más sencilla cuando estos ocurren completamente al azar (MCAR). Esto se debe a que en el caso de MNAR, las observaciones faltantes pueden formar fragmentos lo suficientemente grandes como para ocultar los componentes estructurales de las series temporales. Sin embargo, si la serie temporal presenta una estructura temporal bien definida, los métodos de imputación que aprovechan características como la estacionalidad, los ciclos y la autocorrelación pueden tener una ventaja sobre otros métodos más simples.
 
-Una observación muy importante es que la eficiencia de cada método depende del conjunto de datos. Esto significa que cada técnica funciona de manera diferente dependiendo de la estructura de cada serie temporal; en otras palabras, no existe un método único que se adapte a todos los tipos de datos. Esto debe tomarse seriamente en cuenta al intentar elegir un método apropiado para la imputación de múltiples datos en series temporales. Por lo tanto, es necesario analizar las características específicas de la serie temporal con datos faltantes y, a partir de ese análisis, seleccionar el método de imputación que mejor se adapte a dicha estructura.
+Una observación muy importante es que la eficiencia de cada técnica depende del conjunto de datos. Esto significa que cada técnica funciona de manera diferente dependiendo de la estructura de cada serie temporal; en otras palabras, no existe un método único que se adapte a todos los tipos de datos. Esto debe tomarse seriamente en cuenta al intentar elegir un método apropiado para la imputación de múltiples datos en series temporales. Por lo tanto, es necesario analizar las características específicas de la serie temporal con datos faltantes y, a partir de ese análisis, seleccionar el procedimiento de imputación que mejor se adapte a dicha estructura.
 
 A continuación, se describen los métodos de imputación que serán evaluados en cada situación.
 
 ### Valor aleatorio
 
-Para cada valor faltante en la serie temporal, se selecciona aleatoriamente uno de los valores observados de la serie (todos con igual probabilidad de ser seleccionados). El procedimiento se repite para cada dato faltante, lo que puede resultar en diferentes imputaciones para distintos valores faltantes, incluso dentro de la misma brecha.
+Para reemplazar cada valor faltante en la serie temporal, se selecciona aleatoriamente uno de los valores observados de la serie (todos con igual probabilidad de ser seleccionados). El procedimiento se repite para cada dato faltante, lo que puede resultar en diferentes imputaciones para distintos valores faltantes, incluso dentro de la misma brecha.
 
+A diferencia de métodos determinísticos, la imputación aleatoria permite preservar, al menos parcialmente, la variabilidad de los datos, evitando la subestimación de la varianza que suele ocurrir en enfoques más simples, como la imputación por la media.
 
+Entre sus ventajas, se destaca su simplicidad de implementación y su flexibilidad, ya que no requiere supuestos complejos sobre la estructura de los datos. Además, al introducir variabilidad en los valores imputados, permite reflejar en cierta medida la incertidumbre asociada a los datos faltantes.
 
+Sin embargo, este método presenta importantes limitaciones, especialmente en el contexto de series temporales. En particular, no tiene en cuenta la dependencia temporal entre observaciones, como la autocorrelación o la estacionalidad, lo que puede generar imputaciones poco realistas. Asimismo, la naturaleza aleatoria del procedimiento puede introducir ruido artificial en la serie, afectando la coherencia de los datos imputados. Por otra parte, los resultados pueden variar entre ejecuciones si no se fija una semilla, lo que puede dificultar la reproducibilidad.
 
+En resumen, este procedimiento puede resultar adecuado en contextos donde la serie no presenta una estructura temporal marcada, es decir, en ausencia de tendencias, estacionalidad o fuerte autocorrelación. Asimismo, su uso puede ser razonable cuando el porcentaje de datos faltantes es reducido o cuando se emplea como referencia en estudios comparativos. Sin embargo, su aplicabilidad es limitada en series con patrones temporales definidos, donde la preservación de la dinámica de la serie resulta fundamental.
+
+### Valor definido
+
+La imputación por valor definido consiste en reemplazar los valores faltantes por un valor fijo previamente establecido. Este valor puede ser seleccionado con base en el conocimiento previo del fenómeno que se está modelando o por conveniencia en situaciones específicas.
+
+Una de las principales características de este método es su naturaleza determinística, ya que, dado un conjunto de datos, siempre produce el mismo resultado. Además, se trata de un enfoque sumamente simple desde el punto de vista computacional, lo que facilita su implementación incluso en conjuntos de datos de gran tamaño. Sin embargo, esta simplicidad implica que el método no tiene en cuenta la estructura temporal de la serie ni las posibles relaciones entre las observaciones.
+
+Este metodo presenta importantes limitaciones, ya que la imputación por un valor constante tiende a distorsionar la distribución de los datos, dado que introduce una concentración artificial de valores en el punto elegido. Esto puede afectar la estimación de parámetros, reducir la variabilidad de la serie y generar sesgos en el análisis. Además, al no considerar la dependencia temporal, los valores imputados pueden resultar inconsistentes con la dinámica de la serie.Por este motivo, la imputación por valor definido suele utilizarse en situaciones muy específicas o como punto de comparación, más que como una solución adecuada para preservar la información temporal de la serie.
+
+### Valor medio
+
+El método de imputación por el valor medio es una técnica simple que consiste en reemplazar los valores faltantes en una serie temporal con el valor medio de los datos observados. El proceso es bastante directo: se calcula la media aritmética de los valores no faltantes de la serie, y este valor se utiliza para imputar todos los datos faltantes.
+
+Este método se caracteriza por ser determinístico y de muy sencilla implementación, ya que solo requiere el cálculo de un estadístico resumen. Sin embargo, al igual que otros métodos simples, no tiene en cuenta la estructura temporal de la serie, ignorando posibles patrones como la tendencia, la estacionalidad o la autocorrelación.
+
+Entre sus principales ventajas se destaca su simplicidad y rapidez de aplicación. Además, permite mantener el valor medio de la serie, lo cual puede resultar útil en ciertos análisis descriptivos donde la media es una medida de interés. Por otro lado, esta técnica presenta importantes desventajas. En particular, tiende a subestimar la variabilidad de los datos, ya que reemplaza múltiples valores por un mismo valor constante. Esto genera una reducción artificial de la varianza y puede distorsionar la distribución de la serie. 
+
+Estas limitaciones pueden afectar negativamente el desempeño de los modelos, ya que la alteración de la variabilidad y de la estructura temporal puede conducir a estimaciones sesgadas y a una menor precisión en las predicciones. Por este motivo, la imputación por la media suele considerarse como un método básico o de referencia, más que como una técnica adecuada cuando se busca preservar la dinámica temporal de la serie. Esta técnica es más adecuada para situaciones en las que la serie tiene pocos valores faltantes y los datos no presentan grandes variaciones a lo largo del tiempo. 
+
+Es importante destacar que este método constituye un caso particular de la imputación por valor definido, donde el valor elegido corresponde a la media de los datos observados.
+
+### Valor mediano
+
+La imputación por la mediana consiste en reemplazar los valores faltantes de una serie por la mediana calculada a partir de las observaciones disponibles. Al igual que en el caso de la media, este método asigna un valor constante a todos los datos faltantes, sin considerar la posición temporal de las observaciones dentro de la serie, siendo también un caso particular de la imputación por valor definido.
+ 
+Este método se caracteriza por ser determinístico y de fácil implementación, ya que requiere únicamente el cálculo de un estadístico resumen. Una de sus principales particularidades es su robustez frente a valores atípicos, dado que la mediana no se ve afectada por observaciones extremas en la misma medida que la media. Sin embargo, al igual que otros métodos simples, no tiene en cuenta la estructura temporal de la serie, ignorando patrones como la tendencia, la estacionalidad y la autocorrelación, pudiendo afectar negativamente el modelado y el pronóstico.
+
+### Valor modal
+
+La imputación por la moda consiste en reemplazar los valores faltantes por el valor más frecuente entre las observaciones disponibles. Al igual que otros métodos basados en estadísticos resumen, este enfoque asigna un único valor constante a todos los datos faltantes, sin tener en cuenta la posición temporal de las observaciones dentro de la serie, siendo de igual manera un caso particular de imputación por valor definido.
+
+Este método es determinístico y de sencilla implementación, ya que solo requiere identificar el valor con mayor frecuencia en la serie. Es particularmente útil en series temporales categóricas o discretas, donde ciertos valores ocurren repetidamente, y puede ser una opción efectiva si la serie tiene un valor dominante que se presenta con frecuencia. Sin embargo, en el contexto de series temporales continuas puede no ser informativa o incluso no estar claramente definida.
+
+La imputación por la moda presenta varias limitaciones. En primer lugar, introduce una concentración artificial de valores en el valor modal, lo que puede distorsionar la distribución de los datos. Asimismo, no tiene en cuenta la variabilidad ni la estructura temporal de la serie, ignorando patrones como la tendencia, la estacionalidad o la autocorrelación. En el caso de series continuas, su uso puede resultar poco apropiado si no existe un valor claramente predominante. Estas limitaciones pueden afectar negativamente el modelado y el pronóstico.
 
 
 
