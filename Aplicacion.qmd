@@ -73,7 +73,7 @@ serie_test <- window(serie, start = c(2025, 1))
 
 La electricidad constituye un insumo esencial para el funcionamiento de la economía y el bienestar social. En particular, el análisis de la demanda de energía eléctrica resulta de gran interés para los organismos reguladores, las empresas proveedoras y los investigadores, ya que permite comprender los patrones de consumo.
 
-En este trabajo se utilizará una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación Argentina. La serie abarca mediciones mensuales desde enero de 2001 hasta diciembre de 2025, y cuenta con 300 observaciones, que reflejan el consumo eléctrico total del país en gigavatios-hora (en miles de GWh). A fines prácticos, se trabajará con observaciones desde enero de 2010 hasta diciembre de 2025
+En este trabajo se utilizará una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación Argentina. La serie abarca mediciones mensuales desde enero de 2010 hasta diciembre de 2025, y cuenta con 300 observaciones, que reflejan el consumo eléctrico total del país en gigavatios-hora (en miles de GWh). 
 
 
 ## Análisis descriptivo
@@ -113,7 +113,7 @@ ggplot() +
 
 La @fig-grafico1 muestra una tendencia creciente en la demanda a lo largo del período analizado, aunque dicha tendencia no es estrictamente lineal.
 
-En 2020 se observa un evento atípico: un quiebre o shock estructural asociado a la pandemia de COVID-19. Por otro lado, en marzo de 2023 se observa un pico de demanda asociado a condiciones climáticas extremas (ola de calor) (La Nación, 2024).
+En 2020 se observa un evento atípico: un quiebre o shock estructural asociado a la pandemia de COVID-19. Por otro lado, en marzo de 2023 se observa un pico de demanda asociado a condiciones climáticas extremas (ola de calor).
 
 ```{r fig-grafico2, fig.cap= "Distribución de la demanda eléctrica por año", fig.height=3, fig.width=5.5}
 demanda_filtrada <- subset(datos, 2010 <= anio & anio < 2025)

@@ -265,7 +265,7 @@ A diferencia de métodos determinísticos, la imputación aleatoria permite pres
 
 Entre sus ventajas, se destaca su simplicidad de implementación y su flexibilidad, ya que no requiere supuestos complejos sobre la estructura de los datos. Además, al introducir variabilidad en los valores imputados, permite reflejar en cierta medida la incertidumbre asociada a los datos faltantes.
 
-Sin embargo, este método presenta importantes limitaciones, especialmente en el contexto de series temporales. En particular, no tiene en cuenta la dependencia temporal entre observaciones, como la autocorrelación o la estacionalidad, lo que puede generar imputaciones poco realistas. Asimismo, la naturaleza aleatoria del procedimiento puede introducir ruido artificial en la serie, afectando la coherencia de los datos imputados. Por otra parte, los resultados pueden variar entre ejecuciones si no se fija una semilla, lo que puede dificultar la reproducibilidad.
+Sin embargo, este método presenta importantes limitaciones, especialmente en el contexto de series temporales. En particular, no tiene en cuenta la dependencia temporal entre observaciones, como la autocorrelación o la estacionalidad, lo que puede generar imputaciones poco realistas. Asimismo, la naturaleza aleatoria del procedimiento puede introducir ruido artificial en la serie, afectando la coherencia de los datos imputados.
 
 En resumen, este procedimiento puede resultar adecuado en contextos donde la serie no presenta una estructura temporal marcada, es decir, en ausencia de tendencias, estacionalidad o fuerte autocorrelación. Asimismo, su uso puede ser razonable cuando el porcentaje de datos faltantes es reducido o cuando se emplea como referencia en estudios comparativos. Sin embargo, su aplicabilidad es limitada en series con patrones temporales definidos, donde la preservación de la dinámica de la serie resulta fundamental.
 
@@ -275,13 +275,13 @@ La imputación por valor definido consiste en reemplazar los valores faltantes p
 
 Una de las principales características de este método es su naturaleza determinística, ya que, dado un conjunto de datos, siempre produce el mismo resultado. Además, se trata de un enfoque sumamente simple desde el punto de vista computacional, lo que facilita su implementación incluso en conjuntos de datos de gran tamaño. Sin embargo, esta simplicidad implica que el método no tiene en cuenta la estructura temporal de la serie ni las posibles relaciones entre las observaciones.
 
-Este metodo presenta importantes limitaciones, ya que la imputación por un valor constante tiende a distorsionar la distribución de los datos, dado que introduce una concentración artificial de valores en el punto elegido. Esto puede afectar la estimación de parámetros, reducir la variabilidad de la serie y generar sesgos en el análisis. Además, al no considerar la dependencia temporal, los valores imputados pueden resultar inconsistentes con la dinámica de la serie.Por este motivo, la imputación por valor definido suele utilizarse en situaciones muy específicas o como punto de comparación, más que como una solución adecuada para preservar la información temporal de la serie.
+Este metodo presenta importantes limitaciones, ya que la imputación por un valor constante tiende a distorsionar la distribución de los datos, dado que introduce una concentración artificial de valores en el punto elegido. Esto puede afectar la estimación de parámetros, reducir la variabilidad de la serie y generar sesgos en el análisis. Además, al no considerar la dependencia temporal, los valores imputados pueden resultar inconsistentes con la dinámica de la serie. Por este motivo, la imputación por valor definido suele utilizarse en situaciones muy específicas o como punto de comparación, más que como una solución adecuada para preservar la información temporal de la serie.
 
 ### Valor medio
 
 El método de imputación por el valor medio es una técnica simple que consiste en reemplazar los valores faltantes en una serie temporal con el valor medio de los datos observados. El proceso es bastante directo: se calcula la media aritmética de los valores no faltantes de la serie, y este valor se utiliza para imputar todos los datos faltantes.
 
-Este método se caracteriza por ser determinístico y de muy sencilla implementación, ya que solo requiere el cálculo de un estadístico resumen. Sin embargo, al igual que otros métodos simples, no tiene en cuenta la estructura temporal de la serie, ignorando posibles patrones como la tendencia, la estacionalidad o la autocorrelación.
+Dicho método se caracteriza por ser determinístico y de muy sencilla implementación, ya que solo requiere el cálculo de un estadístico resumen. Sin embargo, al igual que otros métodos simples, no tiene en cuenta la estructura temporal de la serie, ignorando posibles patrones como la tendencia, la estacionalidad o la autocorrelación.
 
 Entre sus principales ventajas se destaca su simplicidad y rapidez de aplicación. Además, permite mantener el valor medio de la serie, lo cual puede resultar útil en ciertos análisis descriptivos donde la media es una medida de interés. Por otro lado, esta técnica presenta importantes desventajas. En particular, tiende a subestimar la variabilidad de los datos, ya que reemplaza múltiples valores por un mismo valor constante. Esto genera una reducción artificial de la varianza y puede distorsionar la distribución de la serie. 
 
@@ -299,9 +299,59 @@ Este método se caracteriza por ser determinístico y de fácil implementación,
 
 La imputación por la moda consiste en reemplazar los valores faltantes por el valor más frecuente entre las observaciones disponibles. Al igual que otros métodos basados en estadísticos resumen, este enfoque asigna un único valor constante a todos los datos faltantes, sin tener en cuenta la posición temporal de las observaciones dentro de la serie, siendo de igual manera un caso particular de imputación por valor definido.
 
-Este método es determinístico y de sencilla implementación, ya que solo requiere identificar el valor con mayor frecuencia en la serie. Es particularmente útil en series temporales categóricas o discretas, donde ciertos valores ocurren repetidamente, y puede ser una opción efectiva si la serie tiene un valor dominante que se presenta con frecuencia. Sin embargo, en el contexto de series temporales continuas puede no ser informativa o incluso no estar claramente definida.
+En este caso, se trata de una técnica determinística y de sencilla implementación, ya que solo requiere identificar el valor con mayor frecuencia en la serie. Es particularmente útil en series temporales categóricas o discretas, donde ciertos valores ocurren repetidamente, y puede ser una opción efectiva si la serie tiene un valor dominante que se presenta con frecuencia. Sin embargo, en el contexto de series temporales continuas puede no ser informativa o incluso no estar claramente definida.
 
 La imputación por la moda presenta varias limitaciones. En primer lugar, introduce una concentración artificial de valores en el valor modal, lo que puede distorsionar la distribución de los datos. Asimismo, no tiene en cuenta la variabilidad ni la estructura temporal de la serie, ignorando patrones como la tendencia, la estacionalidad o la autocorrelación. En el caso de series continuas, su uso puede resultar poco apropiado si no existe un valor claramente predominante. Estas limitaciones pueden afectar negativamente el modelado y el pronóstico.
+
+### Interpolación lineal
+
+La interpolación lineal es un método de imputación que estima los valores faltantes utilizando la información de las observaciones vecinas, asumiendo que la evolución entre dos puntos consecutivos conocidos sigue una trayectoria lineal. En otras palabras, cuando se presenta un valor faltante entre dos observaciones disponibles, el método construye una recta que une dichos puntos y asigna al dato ausente el valor correspondiente sobre esa recta.
+
+Formalmente, si $y_t$ es un valor faltante ubicado entre dos observaciones conocidas $y_{t_1}$ y $y_{t_2}$, con $t_1<t<t_2$, la imputación se realiza como una combinación lineal de estos valores, proporcional a la distancia temporal entre ellos. De este modo, el valor imputado refleja una transición suave y continua entre los puntos observados, respetando la estructura temporal de la serie. El valor imputado queda definido como: $$\hat{y_t}=y_{t_1}+\frac{(t-t_1)(y_{t_2}-y_{t_1})}{t_2-t_1}$$
+
+Este método es particularmente adecuado cuando la serie presenta cambios graduales y relativamente suaves, sin variaciones abruptas en cortos períodos de tiempo. Su principal ventaja radica en su simplicidad y en su capacidad para preservar la continuidad de la serie, evitando saltos artificiales. Sin embargo, puede resultar inadecuado en presencia de patrones no lineales, como cambios bruscos, estacionalidad marcada o comportamientos altamente volátiles, ya que tiende a suavizar en exceso la dinámica real de los datos.
+
+### Interpolación spline
+
+La interpolación spline es un método de imputación que estima los valores faltantes mediante funciones polinómicas definidas por tramos, en lugar de utilizar una única recta entre dos puntos. En este enfoque, la serie se aproxima mediante una sucesión de polinomios de bajo grado (habitualmente cúbicos) que se ajustan entre pares de observaciones consecutivas, garantizando que la función resultante sea suave en todo el dominio.
+
+El proceso comienza dividiendo la serie en intervalos adecuados, generalmente entre puntos de datos consecutivos o en función de la distribución de los datos disponibles. Luego, para cada intervalo, se ajusta un polinomio spline que asegura la continuidad en los puntos de unión (nodos) y, dependiendo de las condiciones de borde especificadas, puede garantizar continuidad en las derivadas.
+
+A diferencia de la interpolación lineal, que asume una evolución constante entre dos puntos, la interpolación spline permite capturar curvaturas en los datos. Esto se logra imponiendo condiciones de continuidad no solo en los valores de la función, sino también en sus derivadas, lo que genera transiciones más naturales entre los puntos observados. Como resultado, los valores imputados siguen trayectorias suaves que reflejan mejor la dinámica subyacente de la serie.
+
+Dicho enfoque es especialmente útil en series temporales donde se esperan cambios graduales pero no necesariamente lineales, como en procesos con tendencias suaves o componentes estacionales. Entre sus ventajas se destacan su flexibilidad y su capacidad para modelar estructuras más complejas que la interpolación lineal. Sin embargo, es importante tener en cuenta que la precisión de la interpolación puede verse afectada por la elección de los intervalos y la adecuación de los polinomios spline a los datos disponibles. Además, puede presentar dificultades cuando los datos son muy ruidosos o cuando existen valores atípicos, ya que los splines pueden generar oscilaciones indeseadas (fenómeno conocido como sobreajuste local).
+
+Mientras que la interpolación lineal impone una estructura rígida basada en cambios constantes entre observaciones, la interpolación spline introduce mayor flexibilidad al permitir curvaturas suaves, lo que puede resultar más adecuado en series con dinámica no lineal.
+
+### Interpolación de Stineman
+
+La interpolación de Stineman es un método de imputación que construye una función suave entre observaciones conocidas, con el objetivo de evitar las oscilaciones indeseadas que pueden aparecer en otros métodos más flexibles, como los splines. A diferencia de la interpolación spline, que utiliza polinomios por tramos con condiciones de suavidad global, el método de Stineman se basa en pendientes locales calculadas a partir de los puntos vecinos, lo que le permite adaptarse de manera más controlada a la forma de la serie.
+
+Este método combina la simplicidad de la interpolación lineal con una mayor capacidad para reflejar la curvatura de los datos. En lugar de imponer una recta entre dos puntos, ajusta la trayectoria utilizando información sobre la dirección y magnitud de los cambios en los valores adyacentes, generando transiciones suaves pero evitando cambios bruscos o sobreajustes. De esta manera, logra una interpolación que respeta la tendencia local sin introducir fluctuaciones artificiales.
+
+El proceso comienza identificando los puntos de datos más cercanos a cada valor faltante en la serie. Estos puntos actúan como referencias para determinar la forma de la función de interpolación de Stineman. En lugar de asumir una relación lineal entre puntos adyacentes, Stineman ajusta una función no lineal que se adapta mejor a la estructura y las variaciones de los datos disponibles.
+
+La función de interpolación se ajusta minimizando una medida de discrepancia, como el error cuadrático medio o una función de penalización que considera las diferencias locales entre puntos de datos. Este proceso garantiza que la interpolación captura adecuadamente las fluctuaciones locales y asegura una transición suave entre los puntos conocidos. Una vez ajustada esta función, se utiliza para calcular los valores faltantes en la serie temporal. Para cada punto de tiempo sin datos, se evalúa la función interpolada para obtener la imputación correspondiente.
+
+La interpolación de Stineman resulta especialmente adecuada en series temporales donde se desea preservar la forma general de los datos sin asumir una estructura estrictamente lineal ni permitir excesiva flexibilidad. Entre sus ventajas se destacan su estabilidad numérica y su capacidad para evitar oscilaciones no realistas. Sin embargo, como desventaja, puede no capturar adecuadamente patrones complejos o altamente no lineales, y su uso es menos extendido en comparación con métodos más tradicionales.
+
+La interpolación de Stineman puede interpretarse como un compromiso entre la rigidez de la interpolación lineal y la flexibilidad de los splines, ofreciendo una alternativa que prioriza la estabilidad y la forma global de la serie.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
