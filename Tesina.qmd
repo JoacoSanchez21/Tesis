@@ -337,23 +337,118 @@ La interpolación de Stineman resulta especialmente adecuada en series temporale
 
 La interpolación de Stineman puede interpretarse como un compromiso entre la rigidez de la interpolación lineal y la flexibilidad de los splines, ofreciendo una alternativa que prioriza la estabilidad y la forma global de la serie.
 
+### Media móvil simple
 
+La imputación mediante media móvil simple es un método que estima los valores faltantes utilizando el promedio de un conjunto de observaciones vecinas de la serie temporal. A diferencia de métodos globales, como la imputación por la media total, este enfoque aprovecha información local de la serie, considerando únicamente valores cercanos al instante en el que ocurre el dato faltante. De esta manera, la imputación se adapta parcialmente a la dinámica temporal de los datos.
 
+El procedimiento consiste en reemplazar cada observación faltante por el promedio de las $k$ observaciones más próximas, donde $k$ representa el tamaño de la ventana de la media móvil. En este trabajo, la imputación mediante media móvil simple se implementa utilizando una ventana centrada, considerando observaciones anteriores y posteriores al dato faltante. Sin embargo, pueden realizarse la imputación únicamente con valores anteriores al dato faltante, únicamente posteriores o una combinación de ambos. Como resultado, el valor imputado refleja el comportamiento promedio reciente de la serie, suavizando fluctuaciones de corto plazo.
 
+De esta manera, la estimación puede expresarse como: $$\hat{y}_t = \frac{1}{k}\sum_{i=1}^{k} y_i$$
+donde:
 
+- $\hat{y}_t$ es el valor imputado,
 
+- $y_i$ las observaciones vecinas utilizadas,
 
+- k es el tamaño de la ventana.
 
+Este método resulta especialmente útil en series relativamente estables, con cambios suaves y sin variaciones abruptas, ya que permite preservar parcialmente la estructura temporal local. Entre sus principales ventajas se encuentran su simplicidad de implementación y su capacidad para reducir el impacto del ruido. No obstante, la media móvil tiende a suavizar excesivamente la serie, reduciendo su variabilidad natural y dificultando la representación de cambios bruscos, picos o puntos de inflexión. Además, la elección del tamaño de la ventana puede influir significativamente en los resultados: ventanas pequeñas generan imputaciones más sensibles a fluctuaciones locales, mientras que ventanas grandes producen estimaciones más estables pero menos adaptadas a la dinámica inmediata de la serie.
 
+### Media móvil lineal ponderada
 
+La imputación mediante media móvil lineal ponderada es un método que estima los valores faltantes utilizando un promedio ponderado de las observaciones vecinas de la serie temporal. A diferencia de la media móvil simple, donde todas las observaciones consideradas tienen la misma importancia, en este enfoque se asignan pesos diferentes a cada valor de la ventana.
 
+El procedimiento consiste en definir una ventana alrededor de la observación ausente y calcular un promedio ponderado de los valores disponibles dentro de dicha ventana. Los pesos varían de manera lineal según la distancia temporal respecto al dato faltante, de modo que las observaciones más próximas reciben un peso mayor y las más alejadas un peso menor. Esto permite que la imputación refleje de manera más precisa la dinámica local de la serie, especialmente cuando existen cambios graduales en el tiempo.
 
+La estimación del valor faltante está dada por: $$\hat{y}_t = \frac{\sum_{i=1}^{k} w_i y_i}{\sum_{i=1}^{k} w_i}$$ donde:
 
+- $\hat{y}_t$ es el valor imputado,
 
+- $y_i$ las observaciones vecinas utilizadas,
 
+- $w_i$ son los pesos asignados a cada observación,
 
+- k es el tamaño de la ventana.
 
+Los pesos $w_i$ suelen sumar uno para asegurar que la media ponderada esté normalizada y refleje adecuadamente la contribución relativa de cada valor observado en la imputación del valor faltante. Estos pesos pueden ser predefinidos, basados en la distancia temporal o calculados dinámicamente según la estructura de los datos y la distribución de los valores observados.
 
+La estimación por media móvil simple es un caso particular, en el cual: $w_i = \frac{1}{k}, \quad \forall i$. Por lo tanto, la media móvil lineal ponderada constituye una generalización de la media móvil simple.
+
+Este método resulta adecuado en series temporales donde las observaciones cercanas presentan mayor similitud entre sí que las más distantes, situación frecuente en procesos con dependencia temporal moderada. Entre sus principales ventajas se destacan su simplicidad y su capacidad para adaptarse mejor a variaciones locales en comparación con la media móvil simple. Sin embargo, al igual que otros métodos basados en promedios, puede producir un efecto de suavización excesiva, reduciendo la variabilidad natural de la serie y dificultando la representación de cambios abruptos o valores extremos. Además, su desempeño depende de la elección del tamaño de la ventana y del esquema de ponderación utilizado.
+
+### Media móvil ponderada exponencial
+
+La imputación mediante media móvil ponderada exponencial es un método que estima los valores faltantes utilizando un promedio ponderado de observaciones vecinas, asignando pesos que decrecen exponencialmente a medida que aumenta la distancia temporal respecto al dato faltante. De esta manera, las observaciones más cercanas tienen una influencia mayor sobre la imputación que las más alejadas, permitiendo capturar con mayor sensibilidad la estructura reciente de la serie temporal.
+
+El procedimiento consiste en definir una ventana de observaciones alrededor del valor ausente y calcular un promedio ponderado utilizando pesos exponenciales. A diferencia de la media móvil lineal ponderada, donde los pesos disminuyen de manera lineal, en este enfoque la reducción es más rápida, concentrando la mayor parte de la información en las observaciones más próximas temporalmente. Esto resulta especialmente útil en series donde los valores recientes contienen información más relevante que los antiguos.
+
+La expresión del valor imputado resulta igual a la imputación usando el método media móvil lineal ponderada. Sin embargo, en esta técnica, los pesos decrecen exponencialmente con la distancia temporal. Una forma habitual de representarlos es: $$w_i = \alpha (1-\alpha)^{i-1},  \quad 0 < \alpha < 1 $$ donde $\alpha$ es el parámetro de suavizamiento, encargado de controlar la rapidez con la que disminuyen los pesos. Valores elevados de $\alpha$ otorgan mayor importancia a las observaciones más recientes, mientras que valores pequeños producen un suavizado más paulatino. 
+
+Este método resulta particularmente adecuado en series temporales donde la información más reciente refleja de manera más precisa el comportamiento actual del proceso. Entre sus principales ventajas se encuentran su capacidad para adaptarse rápidamente a cambios locales y su mayor sensibilidad frente a variaciones recientes de la serie. Sin embargo, puede verse afectado por valores atípicos cercanos al dato faltante, debido al alto peso asignado a las observaciones más próximas. Además, la elección del parámetro de suavizamiento influye significativamente en los resultados obtenidos.
+
+### Última observación trasladada hacia adelante
+
+La imputación mediante última observación trasladada hacia adelante (*Last Observation Carried Forward*, LOCF) es un enfoque sencillo y directo que consiste en reemplazar cada valor faltante con el último valor observado disponible. De esta manera, se asume que el valor de la serie permanece constante hasta que se dispone de un nuevo dato observado.
+
+El procedimiento consiste en recorrer la serie temporal y, ante la presencia de una observación faltante, asignarle el valor correspondiente a la observación válida más reciente. En consecuencia, cuando existen varios valores faltantes consecutivos, todos ellos son reemplazados por la misma observación previa conocida. 
+
+Este método resulta especialmente útil en series temporales con alta persistencia o cambios lentos en el tiempo, donde las observaciones consecutivas tienden a presentar valores similares. Entre sus principales ventajas se destacan su simplicidad computacional y la preservación de valores reales observados, evitando introducir valores artificiales intermedios. Sin embargo, presenta importantes limitaciones. La utilización repetida de una misma observación puede generar tramos artificialmente constantes, reduciendo la variabilidad de la serie y distorsionando su dinámica temporal. Además, el método puede producir sesgos significativos cuando la serie presenta tendencias, estacionalidad o cambios bruscos, ya que asume implícitamente estabilidad temporal entre observaciones consecutivas.
+
+### Siguiente observación trasladada hacia atrás
+
+La imputación mediante próxima observación trasladada hacia atrás (*Next Observation Carried Backward*, NOCB) es un método que reemplaza cada valor faltante utilizando la primera observación disponible posterior al instante faltante. En este enfoque, se asume que el valor observado en el futuro inmediato puede utilizarse como aproximación para los datos ausentes anteriores.
+
+El procedimiento consiste en recorrer la serie temporal e imputar cada observación faltante con el valor válido más cercano ubicado posteriormente en el tiempo, en contraposición al método LOCF. En consecuencia, cuando existen varios valores faltantes consecutivos, todos ellos son reemplazados por la misma observación futura conocida.
+
+Este método resulta adecuado en contextos donde las observaciones futuras pueden considerarse representativas de los valores faltantes previos o cuando se desea evitar la propagación de valores antiguos hacia adelante. Entre sus principales ventajas se encuentran su simplicidad de implementación y la preservación de valores reales observados. Sin embargo, al igual que LOCF, puede generar tramos artificialmente constantes y reducir la variabilidad natural de la serie. Además, puede resultar poco realista en series con tendencia o cambios abruptos, ya que utiliza información futura para estimar observaciones pasadas, lo que puede introducir distorsiones en la dinámica temporal del proceso.
+
+### División estacional
+
+La imputación mediante división estacional es un método que estima los valores faltantes aprovechando la estructura estacional presente en la serie temporal. Asume que los datos tienen un patrón estacional recurrente y utiliza este patrón para inferir los valores faltantes, lo que permite una imputación más precisa cuando la serie tempral tiene una fuerte estacionalidad. 
+
+El enfoque de este método se basa en dividir la serie temporal según los ciclos estacionales identificados, y luego imputar los valores faltantes dentro de cada ciclo en función de los valores observados correspondientes a las mismas posiciones estacionales en otros ciclos. La idea principal es que los valores en una misma fase de la estacionalidad (por ejemplo, el mismo mes en diferentes años) tienden a ser similares, por lo que los valores faltantes en una parte del ciclo estacional pueden ser imputados usando datos de otras partes del mismo ciclo en años o periodos anteriores o posteriores.
+
+Este método resulta especialmente útil en series temporales con patrones estacionales marcados y relativamente estables en el tiempo, ya que permite preservar la estructura periódica de los datos durante el proceso de imputación. Entre sus principales ventajas se destaca su capacidad para mantener la estacionalidad de la serie, evitando distorsiones que podrían producir métodos más simples. Sin embargo, su desempeño depende de una correcta estimación del componente estacional y puede verse afectado en series con estacionalidad débil, cambiante o difícil de identificar. Además, requiere que la serie sea de una longitud suficientemente grande para estimar adecuadamente los patrones estacionales.
+
+### Descomposición estacional
+
+La imputación mediante descomposición estacional es un método que estima los valores faltantes aprovechando la estructura interna de la serie temporal a través de la separación de sus componentes principales. Este enfoque parte de la idea de que una serie temporal puede representarse como la combinación de distintos componentes, generalmente tendencia, estacionalidad y ruido, los cuales pueden analizarse por separado para facilitar la imputación de observaciones ausentes.
+
+El procedimiento consiste en descomponer la serie temporal en sus componentes estructurales mediante técnicas de descomposición aditiva o multiplicativa. Una vez obtenidos estos componentes, la imputación se realiza sobre la serie ajustada, es decir, sobre aquella en la que se ha eliminado temporalmente el componente estacional y/o de tendencia. Posteriormente, los componentes extraídos son reincorporados para reconstruir la serie original imputada.
+
+Luego de realizar la descomposición, la imputación de los valores faltantes no se efectúa directamente sobre la serie original, sino sobre una versión ajustada de la misma, en la que se han removido temporalmente algunos de sus componentes estructurales, principalmente la tendencia y la estacionalidad. El objetivo de este procedimiento es simplificar la dinámica de la serie antes de realizar la imputación, obteniendo una componente residual más estable y sencilla de modelar.
+
+Una vez eliminados estos componentes, los valores faltantes de la serie ajustada se estiman mediante métodos auxiliares de imputación o interpolación, como interpolación lineal, medias móviles u otros procedimientos de suavizamiento. Posteriormente, los componentes previamente removidos son reincorporados para reconstruir la serie temporal completa en su escala original. De esta manera, la imputación final conserva tanto la tendencia como los patrones estacionales presentes en la serie, evitando distorsionar su estructura temporal.
+
+Este método resulta especialmente adecuado en series temporales que presentan patrones estacionales y tendencias claramente definidos, ya que permite preservar dichas estructuras durante la imputación. Entre sus principales ventajas se destacan su capacidad para mantener las características fundamentales de la serie y su flexibilidad para adaptarse a diferentes tipos de comportamiento temporal. Sin embargo, su desempeño depende de la calidad de la descomposición realizada y puede verse afectado cuando la serie presenta alta volatilidad, cambios estructurales o patrones estacionales poco estables. Además, requiere una cantidad suficiente de observaciones para estimar adecuadamente los componentes de la serie.
+
+### Suavizado de Kalman en un modelo estructural
+
+Este enfoque captura la estructura interna de la serie, descomponiéndola en componentes como la tendencia, la estacionalidad y el ruido, lo que permite una imputación más precisa y coherente con la dinámica temporal subyacente de los datos. Una vez que la serie temporal se ha descompuesto en sus componentes estructurales, se reformula en un formato conocido como "espacio de estados". En este marco, los componentes de la serie (como la tendencia o la estacionalidad) se tratan como estados no observados que evolucionan a lo largo del tiempo. A partir de esta representación, entra en juego el filtro de Kalman, que es un algoritmo diseñado para calcular estos estados ocultos basándose en las observaciones disponibles, incluso cuando hay datos faltantes.
+
+Como se mencionó anteriormente, el filtro de Kalman funciona en dos etapas: predicción y actualización. En la fase de predicción, el filtro utiliza el modelo estructural para calcular los valores futuros de la serie basándose en los datos pasados y los estados estimados previamente. Cuando falta un valor en la serie, el filtro de Kalman puede seguir realizando estas predicciones sin necesidad de observaciones en ese punto específico, utilizando solo la información estructural y las observaciones adyacentes. Después, cuando el filtro encuentra nuevas observaciones, ajusta las predicciones iniciales en función de estos nuevos datos, mejorando así la precisión de las imputaciones.
+
+Sin embargo, el verdadero poder de esta técnica se despliega cuando se aplica el suavizado de Kalman. Mientras que el filtro de Kalman se enfoca en predecir hacia adelante (de pasado a presente), el suavizado de Kalman revisa estas predicciones considerando también la información futura. Esto es crucial cuando hay valores faltantes, ya que no solo se utiliza la información previa al valor perdido, sino también las observaciones posteriores, lo que permite refinar las imputaciones de manera mucho más precisa.
+
+Al descomponer la serie en componentes estructurales, el modelo es capaz de capturar patrones que otros métodos de imputación más simples no podrían. Además, el uso del filtro de Kalman permite hacer imputaciones en puntos donde faltan datos de manera precisa, sin necesidad de realizar supuestos fuertes sobre el comportamiento de los datos. El suavizado de Kalman, al aprovechar información tanto pasada como futura, hace que las imputaciones sean mucho más exactas que si solo se consideraran los datos anteriores al valor faltante.
+
+Entre sus principales ventajas se destacan su sólido fundamento estadístico, su capacidad para incorporar simultáneamente tendencia y estacionalidad, y el aprovechamiento eficiente de toda la información temporal disponible. Además, al utilizar información tanto pasada como futura, suele producir imputaciones más precisas que métodos más simples de interpolación o suavizamiento. Sin embargo, requiere una correcta especificación del modelo estructural y una longitud suficiente de la serie temporal para estimar adecuadamente sus componentes. Asimismo, su implementación resulta considerablemente más compleja y su desempeño puede verse afectado cuando la serie presenta alta irregularidad, cambios estructurales abruptos o patrones difíciles de modelar.
+
+### Representación del espacio en estados de ARIMA y suavizado de Kalman
+
+La imputación mediante representación en espacio de estados de modelos ARIMA y suavizado de Kalman es un método que combina la capacidad de modelado de los procesos ARIMA con las técnicas de estimación recursiva del filtro y suavizado de Kalman. Este enfoque permite estimar valores faltantes utilizando la estructura de dependencia temporal propia de los modelos ARIMA, incorporando además información tanto pasada como futura de la serie temporal.
+
+Los modelos ARIMA describen la evolución de una serie temporal a partir de relaciones autorregresivas, diferenciación e incorporación de componentes de medias móviles. Aunque tradicionalmente estos modelos se expresan mediante ecuaciones de series temporales, también pueden reformularse en el marco de espacio de estados. En esta representación, la dinámica del modelo queda expresada mediante estados no observables que evolucionan en el tiempo y generan las observaciones de la serie. En el apartado siguiente se presentarán estos modelos con mayor detalle.
+
+A partir de esta formulación, el filtro de Kalman puede utilizarse para estimar recursivamente los estados del modelo y manejar naturalmente la presencia de observaciones faltantes. Cuando ocurre un dato ausente, el algoritmo continúa realizando predicciones utilizando únicamente la estructura estimada del modelo ARIMA y las observaciones disponibles. Posteriormente, cuando se incorporan nuevas observaciones, las estimaciones son ajustadas mediante el mecanismo de actualización del filtro.
+
+Sin embargo, al igual que en los modelos estructurales, el mayor potencial del método surge al aplicar el suavizado de Kalman. Mientras que el filtro utiliza únicamente información pasada para estimar los estados del sistema, el suavizado incorpora además observaciones futuras, refinando las estimaciones de los valores faltantes. Como consecuencia, las imputaciones obtenidas resultan más consistentes con la dinámica global de la serie temporal.
+
+Este método resulta especialmente útil en series temporales con fuerte dependencia temporal, ya que los modelos ARIMA permiten capturar relaciones dinámicas complejas entre observaciones consecutivas. Entre sus principales ventajas se destacan su sólido fundamento estadístico, su capacidad para manejar naturalmente datos faltantes y la utilización eficiente de toda la información disponible en la serie. Además, al incorporar la estructura propia del modelo ARIMA, las imputaciones suelen preservar adecuadamente la dinámica temporal de los datos.
+
+No obstante, el desempeño del método depende de una correcta especificación del modelo ARIMA subyacente. Una elección inadecuada de los órdenes autorregresivos, de diferenciación o de medias móviles puede afectar significativamente la calidad de las imputaciones. Asimismo, su implementación resulta más compleja que la de métodos simples de interpolación o suavizamiento y puede presentar dificultades en series con cambios estructurales abruptos o comportamientos no lineales.
+
+## Técnicas de modelado
 
 \newpage
 
