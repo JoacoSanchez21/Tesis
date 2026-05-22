@@ -450,6 +450,74 @@ No obstante, el desempeño del método depende de una correcta especificación d
 
 ## Técnicas de modelado
 
+En el análisis de series temporales, los modelos pueden clasificarse de manera general en deterministas y estocásticos. Los primeros describen la evolución de la serie mediante reglas completamente especificadas, sin incorporar un término aleatorio explícito. En cambio, los modelos estocásticos incluyen una componente de aleatoriedad que permite representar la incertidumbre inherente a los datos y describir con mayor realismo la variabilidad observada en fenómenos temporales. Este ruido representa la variabilidad y la incertidumbre que no pueden explicarse únicamente por los valores pasados de la serie. Como resultado, las predicciones generadas por modelos estocásticos son probabilísticas, proporcionando una distribución de posibles valores futuros.
+
+Uno de los casos mas simples de procesos estocásticos son los procesos ruido blanco, los cuales son una secuencia de datos completamente aleatorios, con una media constante, varianza constante y ninguna autocorrelación significativa en ningún rezago. Si una serie se comporta como ruido blanco, cualquier intento de modelarla utilizando enfoques que asumen dependencias temporales resultará en un modelo que no tiene capacidad predictiva y simplemente se ajustará al ruido. Antes de aplicar modelos que asuman estructuras temporales, es fundamental verificar si la serie muestra autocorrelación significativa o si, por el contrario, se trata de una secuencia aleatoria, lo que indicaría que no hay patrones temporales que puedan ser aprovechados para la predicción.
+
+Los modelos deterministas presentan ciertas limitaciones, ya que pueden ser una simplificación excesiva de la realidad, ignorando la aleatoriedad inherente a muchos sistemas reales, lo que puede llevar a grandes diferencias en las predicciones si no se conocen con precisión estas condiciones. En cambio, una de las principales dificultades de los modelos estocásticos es la necesidad de de estimar un gran número de parámetros, lo que puede llevar a problemas de sobreajuste si el modelo es demasiado complejo para los datos disponibles. Además, la incorporación de términos aleatorios puede hacer que la interpretación de los modelos sea más compleja y menos intuitiva.
+
+Dentro de los enfoques deterministas y estocásticos, se incluyen varios modelos fundamentales en la modelización de series temporales, como los modelos autorregresivos, los de media móvil, y sus combinaciones, como los modelos ARMA, ARIMA y SARIMA. A continuación, se ofrece una descripción breve de cada uno de ellos.
+
+### Procesos Autorregresivos (AR)
+
+La idea principal de los procesos autorregresivos es que el valor actual de la serie puede explicarse a partir de una combinación lineal de observaciones pasadas y un término aleatorio que representa perturbaciones no explicadas por el modelo.
+
+Un modelo autorregresivo de orden $p$, denotado como $AR(p)$, supone que cada observación depende linealmente de las p observaciones inmediatamente anteriores. De esta manera, la dinámica de la serie queda determinada por su propia historia reciente. Formalmente, un proceso AR(p) puede expresarse como: $$Y_t=c+{\phi}_1Y_{t-1}+{\phi}_2Y_{t-2}+\dots+{\phi}_pY_{t-p}+a_t $$ donde:
+
+- $Y_t$ representa el valor de la serie temporal en el instante $t$,
+
+- $c$ es una constante,
+
+- ${\phi}_1$, ${\phi}_2$, ..., ${\phi}_p$ son los parámetros autorregresivos del modelo,
+
+- $a_t$ es un proceso ruido blanco, con media cero y varianza constante.
+
+Los parámetros autorregresivos determinan la influencia que tienen las observaciones pasadas sobre el valor actual de la serie. En particular, valores elevados de estos coeficientes indican una fuerte dependencia temporal entre observaciones.  
+
+Estos modelos resultan especialmente útiles para describir series temporales con dependencia temporal persistente, donde los valores observados presentan correlación significativa con observaciones previas.
+
+### Procesos Promedio Móvil (MA)
+
+Los procesos de media móvil constituyen otra clase fundamental de modelos estocásticos utilizados en series temporales. A diferencia de los modelos autorregresivos, donde el valor actual de la serie depende de observaciones pasadas, en los modelos de media móvil cada observación se expresa como una combinación lineal de errores pasados.
+
+Un proceso de media móvil de orden $q$, denotado como $MA(q)$, supone que el valor observado en cada instante temporal depende de los errores ocurridos en los $q$ períodos anteriores. La ecuación resulta: $$Y_t=\mu+\theta_1a_{t-1}+\theta_2a_{t-2}+\dots+\theta_qa_{t-q}$$ donde:
+
+- $Y_t$ representa el valor de la serie temporal en el instante $t$,
+
+- $\mu$ es la media de la serie,
+
+- $\theta_1,\theta_2,\dots,\theta_q$, son los parámetros del proceso media móvil y determinan el efecto que ejercen los errores pasados sobre el valor actual de la serie,
+
+- $a_t$ representa un proceso ruido blanco, con media cero y varianza constante.
+
+Una característica importante de los procesos $MA(q)$ es que son siempre estacionarios, ya que se define como una combinación lineal de procesos estacionarios. Además, son conocidos como procesos de memoria corta, ya que presentan una estructura de dependencia temporal de corto plazo, dado que la influencia de los errores desaparece completamente luego de $q$ períodos. Esto implica que su función de autocorrelación se anula después del rezago q. Por lo tanto, debido a su estructura de memoria corta, los modelos de media móvil son apropiados para representar series temporales donde la influencia de los errores decrece rápidamente y desaparece tras un número finito de períodos.
+
+### Procesos Autorregresivos de Media Móvil (ARMA)
+
+Los procesos ARMA intentan combinar las propiedades de los procesos autorregresivos y de los promedio móvil,  permitiendo representar series temporales cuya dinámica depende tanto de observaciones pasadas como de sus errores pasados.
+
+En un modelo $ARMA(p,q)$, el valor actual de la serie temporal se expresa como una combinación lineal de las $p$ observaciones previas y de los $q$ errores aleatorios pasados. Formalmente, se expresa como: $$Y_t=c+\sum_{i=1}^p\phi_iY_{t-i}+\sum_{j=1}^q\theta_ja_{t-j}$$ cuyos componentes ya fueron definidos anteriormente.
+
+La componente autorregresiva permite modelar la dependencia entre observaciones sucesivas, mientras que la componente de media móvil incorpora el efecto de variaciones aleatorias recientes. Gracias a esta combinación, los modelos $ARMA(p,q)$ poseen una mayor flexibilidad para representar distintos patrones de dependencia temporal presentes en las series. Por lo tanto, resultan adecuados para series temporales estacionarias que presentan tanto persistencia temporal como efectos transitorios de corto plazo.
+
+### Procesos Autorregresivos Integrados de Media Móvil (ARIMA)
+
+Cuando la serie no es estacionaria, se utiliza el modelo Autorregresivo Integrado de Media Móvil (ARIMA). El término "integrado" significa que se aplica una diferenciación de orden $d$ para hacer la serie estacionaria antes de aplicar los componentes AR y MA, permitiendo así eliminar tendencias u otros patrones no estacionarios presentes en la serie. La notación de un modelo ARIMA es $ARIMA(p,d,q)$, donde $d$ es el número de diferencias necesarias para lograr estacionariedad. 
+
+La idea principal de los modelos ARIMA consiste en diferenciar la serie temporal un determinado número de veces hasta alcanzar estacionariedad y, posteriormente, modelar la serie transformada mediante un modelo ARMA. De esta manera, el modelo combina tres componentes fundamentales:
+
+- una componente autorregresiva (AR),
+
+- una componente de integración (I),
+
+- una componente de media móvil (MA).
+
+### Procesos Estacionales, Autorregresivos Integrados de Media Móvil (SARIMA)
+
+Los modelos autorregresivos integrados, de media móvil y estacionales, conocidos como modelos $SARIMA(p,d,q)(P,D,Q)_s$, constituyen una extensión de los modelos $ARIMA(p,d,q)$ diseñada para representar series temporales que presentan comportamiento estacional. Estos modelos permiten incorporar simultáneamente dependencia temporal de corto plazo, tendencia y patrones periódicos que se repiten regularmente en el tiempo.
+
+La principal diferencia respecto de los modelos ARIMA radica en la inclusión de componentes estacionales autorregresivos, de diferenciación y de media móvil. De esta manera, el modelo es capaz de capturar relaciones temporales tanto entre observaciones consecutivas como entre observaciones separadas por un período estacional fijo.
+
 \newpage
 
 # Bibliografía
