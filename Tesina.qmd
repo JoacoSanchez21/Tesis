@@ -602,7 +602,7 @@ Prophet está optimizado para las tareas de previsión empresarial halladas en F
 * Cambios en las tendencias históricas, por ejemplo, debido a lanzamientos de productos o cambios en los registros.
 * Tendencias que son curvas de crecimiento no lineales, donde una tendencia alcanza un límite natural o se satura.
 
-Este algoritmo dispone de parámetros de suavizado para la estacionalidad que permiten ajustar la precisión con la que se ajustan a los ciclos históricos, así como parámetros de suavizado para las tendencias que permiten ajustar la intensidad con la que se siguen los cambios de tendencia históricos. Para las curvas de crecimiento, se pueden especificar manualmente las "capacidades" o el límite superior de la curva, lo que permite incorporar información previa sobre cómo crecerá (o disminuirá) la previsión. Por último, se pueden especificar días festivos irregulares para modelar, como las fechas del Super Bowl, Acción de Gracias y el Black Friday.
+Este algoritmo dispone de parámetros de suavizado para la estacionalidad que permiten ajustar la precisión con la que se ajustan a los ciclos históricos, así como parámetros de suavizado para las tendencias que permiten ajustar la intensidad con la que se siguen los cambios de tendencia históricos. Para las curvas de crecimiento, se pueden especificar manualmente las "capacidades" o el límite superior de la curva, lo que permite incorporar información previa sobre cómo crecerá (o disminuirá) la previsión. Por último, se pueden especificar días festivos irregulares para el modelado.
 
 Se plantea el modelo como uno de regresión aditiva, el cual puede descomponerse en cuatro componentes principales:
 
