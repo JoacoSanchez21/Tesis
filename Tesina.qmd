@@ -140,15 +140,29 @@ Los fenómenos observados mediante series temporales pueden clasificarse en dos 
 
 Para un proceso $\{Y_t: t = 0, \pm 1, \pm 2, \dots\}$ se define:
 
-- La función media del proceso: $E(Y_t) = \mu_t$
-- La función varianza del proceso: $\sigma_t^2 = E(Y_t-\mu_t)^2$
-- La función covarianza entre $Y_{t_1}$ y $Y_{t_2}$: $\gamma(t_1,t_2)=E(Y_{t_1}-\mu_{t_1})(Y_{t_2}-\mu_{t_2})$
+- La función media del proceso: \begin{equation}
+E(Y_t) = \mu_t
+\end{equation}
+- La función varianza del proceso: \begin{equation}
+\sigma_t^2 = E(Y_t-\mu_t)^2
+\end{equation}
+- La función covarianza entre $Y_{t_1}$ y $Y_{t_2}$: \begin{equation}
+\gamma(t_1,t_2)=E(Y_{t_1}-\mu_{t_1})(Y_{t_2}-\mu_{t_2})
+\end{equation}
 
 En un proceso estacionario resulta:
 
-- $\mu_t=\mu$ $\forall t$
-- $\sigma_t^2=\sigma^2$ $\forall t$
-- $\gamma(t_1,t_2)=\gamma(t_1+k,t_2+k)$ $\forall t_1,t_2$ y $k$
+\begin{equation}
+\mu_t=\mu, \quad \forall t 
+\end{equation}
+\begin{equation}
+\sigma_t^2=\sigma^2, \quad \forall t
+\end{equation}
+\begin{equation}
+\gamma(t_1,t_2)=\gamma(t_1+k,t_2+k), \quad \forall\, t_1,t_2 \text{ y } k
+\end{equation}
+
+\newpage
 
 En este contexto, resulta útil descomponer una serie temporal en sus principales componentes no observables, ya que estos permiten interpretar y modelar su comportamiento a lo largo del tiempo. En particular, la presencia de tendencia, estacionalidad, ciclos y un componente aleatorio está estrechamente relacionada con la noción de no estacionariedad, dado que estos elementos introducen cambios sistemáticos en la media o en la estructura de dependencia de la serie. A continuación, se presentan definiciones más precisas de estos componentes, fundamentales para el análisis y modelado de series temporales.
 
@@ -163,7 +177,9 @@ La presencia de tendencia implica que la media de la serie no permanece constant
 La estacionalidad se refiere a la existencia de patrones que se repiten de manera sistemática en intervalos de tiempo fijos y conocidos. Estos patrones suelen estar asociados a factores externos recurrentes, como las estaciones del año, los meses, los días de la semana o incluso las horas dentro del día. A diferencia de otros componentes, la estacionalidad presenta una periodicidad constante, lo que permite su identificación mediante herramientas descriptivas y su modelado a través de métodos específicos.
 
 Se dice que una serie es estacional cuando su valor esperado no es constante, pero varía con una pauta cíclica. En concreto, si:
-$$E(y_t)=E(y_{t+s})$$
+\begin{equation}
+E(y_t)=E(y_{t+s})
+\end{equation}
 se dice que la serie tiene una estacionalidad de periodo $s$. El periodo estacional, $s$, define el número de observaciones que forma el ciclo estacional. Por ejemplo, $s=12$ para series mensuales, $s=4$ para series trimestrales, etc. Se supone que el valor de $s$ es fijo en la serie. Es importante notar que puede existir mas de un tipo de estacionalidad en una serie. 
 
 Desde una perspectiva analítica, la estacionalidad introduce variaciones sistemáticas en la serie que dependen del momento dentro del ciclo temporal considerado. Esto implica que observaciones correspondientes a un mismo período dentro de distintos ciclos (por ejemplo, el mismo mes en diferentes años) tienden a presentar comportamientos similares. La adecuada identificación de este componente es esencial, ya que su omisión puede distorsionar el análisis de la tendencia y afectar la precisión de los modelos de pronóstico.
@@ -182,14 +198,19 @@ En términos estadísticos, suele modelarse como un proceso estocástico con med
 
 Las irregularidades pueden tener un impacto significativo en la precisión de los modelos de series temporales y en las previsiones, ya que pueden ocultar las tendencias subyacentes y los patrones de estacionalidad en los datos. 
 
-
 En conjunto, la identificación y análisis de estos componentes permiten comprender la estructura subyacente de una serie temporal, facilitando tanto su modelado como la formulación de pronósticos más precisos.
 
 Una serie temporal, $Y_1,Y_2,\dots,Y_T$, puede descomponerse en sus componentes fundamentales mediante modelos de descomposición. En particular, el modelo aditivo se expresa como:
-$$Y_t=T_t+E_t+C_t+A_t$$ donde: $T_t$ representa la tendencia, $E_t$ la componente estacional, $C_t$ los ciclos y $A_t$ la componente aleatoria.
+\begin{equation}
+Y_t=T_t+E_t+C_t+A_t
+\end{equation}
+donde: $T_t$ representa la tendencia, $E_t$ la componente estacional, $C_t$ los ciclos y $A_t$ la componente aleatoria.
 
 Por otro lado, el modelo multiplicativo se define como:
-$$Y_t=T_t\times E_t\times C_t\times A_t$$ el cual resulta más adecuado cuando la magnitud de las variaciones estacionales o cíclicas depende del nivel de la serie.
+\begin{equation}
+Y_t=T_t\times E_t\times C_t\times A_t
+\end{equation}
+el cual resulta más adecuado cuando la magnitud de las variaciones estacionales o cíclicas depende del nivel de la serie.
  
  
 ## Autocorrelación
@@ -207,7 +228,9 @@ $Y_t$ y $Y_{t+k}$, tomando valores comprendidos entre -1 y 1. Valores cercanos a
 
 Formalmente, la autocorrelación para un rezago 𝑘 se calcula utilizando la siguiente fórmula:
 
-$$\rho_k = \frac{\sum_{t=k+1}^{T} (y_t - \bar{y})(y_{t-k} - \bar{y})}{\sum_{t=1}^{T} (y_t - \bar{y})^2}$$
+\begin{equation}
+\rho_k = \frac{\sum_{t=k+1}^{T} (y_t - \bar{y})(y_{t-k} - \bar{y})}{\sum_{t=1}^{T} (y_t - \bar{y})^2}
+\end{equation}
 
 ### Función de autocorrelación parcial
 
@@ -307,7 +330,9 @@ La imputación por la moda presenta varias limitaciones. En primer lugar, introd
 
 La interpolación lineal es un método de imputación que estima los valores faltantes utilizando la información de las observaciones vecinas, asumiendo que la evolución entre dos puntos consecutivos conocidos sigue una trayectoria lineal. En otras palabras, cuando se presenta un valor faltante entre dos observaciones disponibles, el método construye una recta que une dichos puntos y asigna al dato ausente el valor correspondiente sobre esa recta.
 
-Formalmente, si $y_t$ es un valor faltante ubicado entre dos observaciones conocidas $y_{t_1}$ y $y_{t_2}$, con $t_1<t<t_2$, la imputación se realiza como una combinación lineal de estos valores, proporcional a la distancia temporal entre ellos. De este modo, el valor imputado refleja una transición suave y continua entre los puntos observados, respetando la estructura temporal de la serie. El valor imputado queda definido como: $$\hat{y_t}=y_{t_1}+\frac{(t-t_1)(y_{t_2}-y_{t_1})}{t_2-t_1}$$
+Formalmente, si $y_t$ es un valor faltante ubicado entre dos observaciones conocidas $y_{t_1}$ y $y_{t_2}$, con $t_1<t<t_2$, la imputación se realiza como una combinación lineal de estos valores, proporcional a la distancia temporal entre ellos. De este modo, el valor imputado refleja una transición suave y continua entre los puntos observados, respetando la estructura temporal de la serie. El valor imputado queda definido como: \begin{equation}
+\hat{y_t}=y_{t_1}+\frac{(t-t_1)(y_{t_2}-y_{t_1})}{t_2-t_1}
+\end{equation}
 
 Este método es particularmente adecuado cuando la serie presenta cambios graduales y relativamente suaves, sin variaciones abruptas en cortos períodos de tiempo. Su principal ventaja radica en su simplicidad y en su capacidad para preservar la continuidad de la serie, evitando saltos artificiales. Sin embargo, puede resultar inadecuado en presencia de patrones no lineales, como cambios bruscos, estacionalidad marcada o comportamientos altamente volátiles, ya que tiende a suavizar en exceso la dinámica real de los datos.
 
@@ -343,7 +368,9 @@ La imputación mediante media móvil simple es un método que estima los valores
 
 El procedimiento consiste en reemplazar cada observación faltante por el promedio de las $k$ observaciones más próximas, donde $k$ representa el tamaño de la ventana de la media móvil. En este trabajo, la imputación mediante media móvil simple se implementa utilizando una ventana centrada, considerando observaciones anteriores y posteriores al dato faltante. Sin embargo, pueden realizarse la imputación únicamente con valores anteriores al dato faltante, únicamente posteriores o una combinación de ambos. Como resultado, el valor imputado refleja el comportamiento promedio reciente de la serie, suavizando fluctuaciones de corto plazo.
 
-De esta manera, la estimación puede expresarse como: $$\hat{y}_t = \frac{1}{k}\sum_{i=1}^{k} y_i$$
+De esta manera, la estimación puede expresarse como: \begin{equation}
+\hat{y}_t = \frac{1}{k}\sum_{i=1}^{k} y_i
+\end{equation}
 donde:
 
 - $\hat{y}_t$ es el valor imputado,
@@ -360,7 +387,10 @@ La imputación mediante media móvil lineal ponderada es un método que estima l
 
 El procedimiento consiste en definir una ventana alrededor de la observación ausente y calcular un promedio ponderado de los valores disponibles dentro de dicha ventana. Los pesos varían de manera lineal según la distancia temporal respecto al dato faltante, de modo que las observaciones más próximas reciben un peso mayor y las más alejadas un peso menor. Esto permite que la imputación refleje de manera más precisa la dinámica local de la serie, especialmente cuando existen cambios graduales en el tiempo.
 
-La estimación del valor faltante está dada por: $$\hat{y}_t = \frac{\sum_{i=1}^{k} w_i y_i}{\sum_{i=1}^{k} w_i}$$ donde:
+La estimación del valor faltante está dada por: \begin{equation}
+\hat{y}_t = \frac{\sum_{i=1}^{k} w_i y_i}{\sum_{i=1}^{k} w_i}
+\end{equation}
+donde:
 
 - $\hat{y}_t$ es el valor imputado,
 
@@ -372,7 +402,9 @@ La estimación del valor faltante está dada por: $$\hat{y}_t = \frac{\sum_{i=1}
 
 Los pesos $w_i$ suelen sumar uno para asegurar que la media ponderada esté normalizada y refleje adecuadamente la contribución relativa de cada valor observado en la imputación del valor faltante. Estos pesos pueden ser predefinidos, basados en la distancia temporal o calculados dinámicamente según la estructura de los datos y la distribución de los valores observados.
 
-La estimación por media móvil simple es un caso particular, en el cual: $w_i = \frac{1}{k}, \quad \forall i$. Por lo tanto, la media móvil lineal ponderada constituye una generalización de la media móvil simple.
+La estimación por media móvil simple es un caso particular, en el cual: \begin{equation}
+w_i = \frac{1}{k}, \quad \forall i
+\end{equation}Por lo tanto, la media móvil lineal ponderada constituye una generalización de la media móvil simple.
 
 Este método resulta adecuado en series temporales donde las observaciones cercanas presentan mayor similitud entre sí que las más distantes, situación frecuente en procesos con dependencia temporal moderada. Entre sus principales ventajas se destacan su simplicidad y su capacidad para adaptarse mejor a variaciones locales en comparación con la media móvil simple. Sin embargo, al igual que otros métodos basados en promedios, puede producir un efecto de suavización excesiva, reduciendo la variabilidad natural de la serie y dificultando la representación de cambios abruptos o valores extremos. Además, su desempeño depende de la elección del tamaño de la ventana y del esquema de ponderación utilizado.
 
@@ -382,7 +414,9 @@ La imputación mediante media móvil ponderada exponencial es un método que est
 
 El procedimiento consiste en definir una ventana de observaciones alrededor del valor ausente y calcular un promedio ponderado utilizando pesos exponenciales. A diferencia de la media móvil lineal ponderada, donde los pesos disminuyen de manera lineal, en este enfoque la reducción es más rápida, concentrando la mayor parte de la información en las observaciones más próximas temporalmente. Esto resulta especialmente útil en series donde los valores recientes contienen información más relevante que los antiguos.
 
-La expresión del valor imputado resulta igual a la imputación usando el método media móvil lineal ponderada. Sin embargo, en esta técnica, los pesos decrecen exponencialmente con la distancia temporal. Una forma habitual de representarlos es: $$w_i = \alpha (1-\alpha)^{i-1},  \quad 0 < \alpha < 1 $$ donde $\alpha$ es el parámetro de suavizamiento, encargado de controlar la rapidez con la que disminuyen los pesos. Valores elevados de $\alpha$ otorgan mayor importancia a las observaciones más recientes, mientras que valores pequeños producen un suavizado más paulatino. 
+La expresión del valor imputado resulta igual a la imputación usando el método media móvil lineal ponderada. Sin embargo, en esta técnica, los pesos decrecen exponencialmente con la distancia temporal. Una forma habitual de representarlos es: \begin{equation}
+w_i = \alpha (1-\alpha)^{i-1},  \quad 0 < \alpha < 1 
+\end{equation} donde $\alpha$ es el parámetro de suavizamiento, encargado de controlar la rapidez con la que disminuyen los pesos. Valores elevados de $\alpha$ otorgan mayor importancia a las observaciones más recientes, mientras que valores pequeños producen un suavizado más paulatino. 
 
 Este método resulta particularmente adecuado en series temporales donde la información más reciente refleja de manera más precisa el comportamiento actual del proceso. Entre sus principales ventajas se encuentran su capacidad para adaptarse rápidamente a cambios locales y su mayor sensibilidad frente a variaciones recientes de la serie. Sin embargo, puede verse afectado por valores atípicos cercanos al dato faltante, debido al alto peso asignado a las observaciones más próximas. Además, la elección del parámetro de suavizamiento influye significativamente en los resultados obtenidos.
 
@@ -456,13 +490,15 @@ Uno de los casos mas simples de procesos estocásticos son los procesos ruido bl
 
 Los modelos deterministas presentan ciertas limitaciones, ya que pueden ser una simplificación excesiva de la realidad, ignorando la aleatoriedad inherente a muchos sistemas reales, lo que puede llevar a grandes diferencias en las predicciones si no se conocen con precisión estas condiciones. En cambio, una de las principales dificultades de los modelos estocásticos es la necesidad de de estimar un gran número de parámetros, lo que puede llevar a problemas de sobreajuste si el modelo es demasiado complejo para los datos disponibles. Además, la incorporación de términos aleatorios puede hacer que la interpretación de los modelos sea más compleja y menos intuitiva.
 
-Dentro de los enfoques deterministas y estocásticos, se incluyen varios modelos fundamentales en la modelización de series temporales, como los modelos autorregresivos, los de media móvil, y sus combinaciones, como los modelos ARMA, ARIMA y SARIMA. A continuación, se ofrece una descripción breve de cada uno de ellos.
+Dentro de los enfoques deterministas y estocásticos, se incluyen varios modelos fundamentales en la modelización de series temporales, como los modelos autorregresivos, los de media móvil, y sus combinaciones, como los modelos ARMA, ARIMA y SARIMA. A continuación, se ofrece una descripción de cada uno de ellos.
 
 ### Procesos Autorregresivos (AR)
 
 La idea principal de los procesos autorregresivos es que el valor actual de la serie puede explicarse a partir de una combinación lineal de observaciones pasadas y un término aleatorio que representa perturbaciones no explicadas por el modelo.
 
-Un modelo autorregresivo de orden $p$, denotado como $AR(p)$, supone que cada observación depende linealmente de las p observaciones inmediatamente anteriores. De esta manera, la dinámica de la serie queda determinada por su propia historia reciente. Formalmente, un proceso AR(p) puede expresarse como: $$Y_t=c+{\phi}_1Y_{t-1}+{\phi}_2Y_{t-2}+\dots+{\phi}_pY_{t-p}+a_t $$ donde:
+Un modelo autorregresivo de orden $p$, denotado como $AR(p)$, supone que cada observación depende linealmente de las p observaciones inmediatamente anteriores. De esta manera, la dinámica de la serie queda determinada por su propia historia reciente. Formalmente, un proceso AR(p) puede expresarse como: \begin{equation}
+Y_t=c+{\phi}_1Y_{t-1}+{\phi}_2Y_{t-2}+\dots+{\phi}_pY_{t-p}+a_t 
+\end{equation} donde:
 
 - $Y_t$ representa el valor de la serie temporal en el instante $t$,
 
@@ -480,7 +516,9 @@ Estos modelos resultan especialmente útiles para describir series temporales co
 
 Los procesos de media móvil constituyen otra clase fundamental de modelos estocásticos utilizados en series temporales. A diferencia de los modelos autorregresivos, donde el valor actual de la serie depende de observaciones pasadas, en los modelos de media móvil cada observación se expresa como una combinación lineal de errores pasados.
 
-Un proceso de media móvil de orden $q$, denotado como $MA(q)$, supone que el valor observado en cada instante temporal depende de los errores ocurridos en los $q$ períodos anteriores. La ecuación resulta: $$Y_t=\mu+\theta_1a_{t-1}+\theta_2a_{t-2}+\dots+\theta_qa_{t-q}$$ donde:
+Un proceso de media móvil de orden $q$, denotado como $MA(q)$, supone que el valor observado en cada instante temporal depende de los errores ocurridos en los $q$ períodos anteriores. La ecuación resulta: \begin{equation}
+Y_t=\mu+\theta_1a_{t-1}+\theta_2a_{t-2}+\dots+\theta_qa_{t-q}
+\end{equation} donde:
 
 - $Y_t$ representa el valor de la serie temporal en el instante $t$,
 
@@ -496,7 +534,9 @@ Una característica importante de los procesos $MA(q)$ es que son siempre estaci
 
 Los procesos ARMA intentan combinar las propiedades de los procesos autorregresivos y de los promedio móvil,  permitiendo representar series temporales cuya dinámica depende tanto de observaciones pasadas como de sus errores pasados.
 
-En un modelo $ARMA(p,q)$, el valor actual de la serie temporal se expresa como una combinación lineal de las $p$ observaciones previas y de los $q$ errores aleatorios pasados. Formalmente, se expresa como: $$Y_t=c+\sum_{i=1}^p\phi_iY_{t-i}+\sum_{j=1}^q\theta_ja_{t-j}$$ cuyos componentes ya fueron definidos anteriormente.
+En un modelo $ARMA(p,q)$, el valor actual de la serie temporal se expresa como una combinación lineal de las $p$ observaciones previas y de los $q$ errores aleatorios pasados. Formalmente, se expresa como: \begin{equation}
+Y_t=c+\sum_{i=1}^p\phi_iY_{t-i}+\sum_{j=1}^q\theta_ja_{t-j}
+\end{equation} cuyos componentes ya fueron definidos anteriormente.
 
 La componente autorregresiva permite modelar la dependencia entre observaciones sucesivas, mientras que la componente de media móvil incorpora el efecto de variaciones aleatorias recientes. Gracias a esta combinación, los modelos $ARMA(p,q)$ poseen una mayor flexibilidad para representar distintos patrones de dependencia temporal presentes en las series. Por lo tanto, resultan adecuados para series temporales estacionarias que presentan tanto persistencia temporal como efectos transitorios de corto plazo.
 
@@ -517,6 +557,71 @@ La idea principal de los modelos ARIMA consiste en diferenciar la serie temporal
 Los modelos autorregresivos integrados, de media móvil y estacionales, conocidos como modelos $SARIMA(p,d,q)(P,D,Q)_s$, constituyen una extensión de los modelos $ARIMA(p,d,q)$ diseñada para representar series temporales que presentan comportamiento estacional. Estos modelos permiten incorporar simultáneamente dependencia temporal de corto plazo, tendencia y patrones periódicos que se repiten regularmente en el tiempo.
 
 La principal diferencia respecto de los modelos ARIMA radica en la inclusión de componentes estacionales autorregresivos, de diferenciación y de media móvil. De esta manera, el modelo es capaz de capturar relaciones temporales tanto entre observaciones consecutivas como entre observaciones separadas por un período estacional fijo.
+
+## Modelos de pronóstico
+
+A diferencia del análisis predictivo convencional, que puede hacer hincapié en las variables explicativas para predecir un resultado, el pronóstico de series temporales busca estimar el comportamiento futuro de una variable a partir de sus valores históricos. Se pueden categorizar a grandes rasgos los problemas de series temporales de la siguiente manera: si se quiere pronosticar un paso de tiempo hacia adelante en el futuro, que es el caso más común de problemas de series temporales, se denomina predicción de un paso o de un solo paso. Por otro lado, si se hace una predicción que se adelanta varios pasos de tiempo en el futuro, se denomina predicción de varios pasos.
+
+Formalmente, si se quiere pronosticar el valor $Y_{T+K}$, con $k>0$, para una serie $Y_1,Y_2,\dots,Y_T$, se define $\hat{Y}_{T+K}$ como un predictor lineal de la observación $Y_{T+K}$, obtenido como función de las $T$ observaciones, con origen de predicción $T$ y horizonte de predicción $k$.
+
+A continuación, se describen los modelos de predicción que serán comparados en cada situación.
+
+### Modelos ARIMA Y SARIMA
+
+Los modelos ARIMA y SARIMA, descriptos anteriormente, constituyen algunas de las herramientas más utilizadas para el pronóstico de series temporales. Estos modelos permiten describir la dependencia temporal presente en los datos y proyectar dicha estructura hacia períodos futuros. 
+
+Una vez ajustado el modelo a la serie observada, los pronósticos se obtienen de manera recursiva utilizando las relaciones definidas por el propio modelo. En particular, las predicciones para horizontes futuros se construyen a partir de los valores observados y de los valores pronosticados en períodos anteriores. De esta forma, es posible generar estimaciones para distintos horizontes de pronóstico y obtener intervalos de predicción asociados.
+
+Es importante destacar que estos modelos requieren series completas para su estimación. Por este motivo, las observaciones faltantes son reemplazadas previamente mediante los distintos métodos de imputación considerados en este trabajo. Una vez completada la serie, el modelo se ajusta sobre los datos imputados y se generan pronósticos para los distintos horizontes de predicción analizados.
+
+La especificación del modelo se realiza de forma automática mediante el procedimiento implementado en la función `auto.arima()` del paquete `forecast` de R. Este algoritmo selecciona los órdenes autorregresivos, de diferenciación y de media móvil que optimizan determinados criterios de información, considerando además la posible presencia de componentes estacionales.
+
+### Modelo ETS
+
+El modelo ETS (*Error*, *Trend*, *Seasonal*) se basa en el marco de modelos de espacio de estados para el suavizado exponencial. Este enfoque permite descomponer la serie temporal en tres componentes fundamentales: el Error, la Tendencia y la Estacionalidad.
+
+La principal característica de este enfoque es que permite representar explícitamente cada uno de estos componentes mediante estructuras aditivas o multiplicativas, dando lugar a diferentes especificaciones del modelo. De esta manera, los modelos ETS son capaces de adaptarse a una amplia variedad de comportamientos observados en series temporales, incluyendo series con tendencia creciente o decreciente, patrones estacionales de distinta intensidad y variabilidad dependiente del nivel de la serie. 
+
+A diferencia de los modelos ARIMA, que describen la dependencia temporal a través de relaciones entre observaciones y errores pasados, los modelos ETS se basan en la descomposición de la serie en componentes no observados que evolucionan a lo largo del tiempo. Esta formulación permite modelar de manera flexible la tendencia y la estacionalidad, actualizando continuamente sus estimaciones a medida que se incorporan nuevas observaciones.
+
+La especificación del modelo se realiza utilizando la función `ets` del paquete `forecast` de R, la cual eval evalúa distintas combinaciones de componentes de error, tendencia y estacionalidad, seleccionando aquella que optimiza un criterio de información, generalmente el Criterio de Información de Akaike (AIC). Este procedimiento permite identificar de forma automática la estructura que mejor representa el comportamiento de la serie temporal entre un conjunto de modelos candidatos.
+
+Al igual que los modelos ARIMA y SARIMA, requieren series completas para su estimación, por lo que los datos faltantes son imputados previamente mediante las técnicas consideradas en el estudio. 
+
+### Modelo Prophet
+
+El modelo **Prophet** es un procedimiento de pronóstico de código abierto basado en **modelos aditivos generalizados (GAM)**. A diferencia de los modelos autorregresivos tradicionales, Prophet aborda el pronóstico como un problema de ajuste de curvas, lo que lo hace muy robusto ante la presencia de valores atípicos (*outliers*) y periodos con datos faltantes. Es por esto que no es necesario utilizar un metodo de imputación para los valores faltantes. 
+
+Prophet está optimizado para las tareas de previsión empresarial halladas en Facebook, las cuales suelen tener alguna de las siguientes características:
+
+* Observaciones horarias, diarias o semanales con al menos unos meses (preferiblemente un año) de historial.
+
+* Fuertes estacionalidades múltiples a “escala humana”: día de la semana y época del año.
+* Días festivos importantes que ocurren a intervalos irregulares y que se conocen con anticipación (por ejemplo, el *Super Bowl*).
+* Un número razonable de observaciones faltantes o valores atípicos grandes.
+* Cambios en las tendencias históricas, por ejemplo, debido a lanzamientos de productos o cambios en los registros.
+* Tendencias que son curvas de crecimiento no lineales, donde una tendencia alcanza un límite natural o se satura.
+
+Este algoritmo dispone de parámetros de suavizado para la estacionalidad que permiten ajustar la precisión con la que se ajustan a los ciclos históricos, así como parámetros de suavizado para las tendencias que permiten ajustar la intensidad con la que se siguen los cambios de tendencia históricos. Para las curvas de crecimiento, se pueden especificar manualmente las "capacidades" o el límite superior de la curva, lo que permite incorporar información previa sobre cómo crecerá (o disminuirá) la previsión. Por último, se pueden especificar días festivos irregulares para modelar, como las fechas del Super Bowl, Acción de Gracias y el Black Friday.
+
+Se plantea el modelo como uno de regresión aditiva, el cual puede descomponerse en cuatro componentes principales:
+
+* **Tendencia:** Modela el crecimiento de la serie mediante funciones lineales o logísticas por tramos, detectando automáticamente puntos de cambio.
+* **Estacionalidad:** Captura los efectos periódicos (como ciclos anuales, semanales o diarios) utilizando **series de Fourier**, lo que permite modelar patrones estacionales complejos de manera flexible.
+* **Días festivos:** Permite incorporar el impacto de eventos irregulares o calendarios específicos.
+* **Error:** Representa la varianza que no es explicada por los componentes anteriores.
+
+Ajustando el componente de tendencia de forma más flexible, se modela la estacionalidad con mayor precisión y, como resultado, se obtiene un pronóstico más exacto. Para este método se prefieren modelos de regresión muy flexibles en lugar de un modelo de series temporales tradicional, ya que brinda mayor flexibilidad de modelado, facilita el ajuste del modelo y maneja mejor los datos faltantes o los valores atípicos.
+
+Es importante destacar que este modelo, a diferencia de los modelos ARIMA, SARIMA y ETS, permite realizar los pronósticos con una serie incompleta. Por lo tanto, no es necesario imputar valores antes de elaborar los pronósticos. 
+
+\newpage
+
+# Aplicación
+
+\newpage
+
+# Conclusiones
 
 \newpage
 
