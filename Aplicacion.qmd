@@ -246,6 +246,9 @@ tabla <- tabla %>%
     MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
   )
 
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
 tabla %>%
   kable(
     format = "latex",
@@ -438,6 +441,9 @@ tabla <- tabla %>%
     MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
   )
 
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
 tabla %>%
   kable(
     format = "latex",
@@ -629,6 +635,9 @@ tabla <- tabla %>%
     MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
     MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
   )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
 
 tabla %>%
   kable(
