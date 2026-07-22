@@ -36,6 +36,35 @@ execute:
   message: false
 ---
 
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.align = "center")
+
+# Librerías
+library(dplyr)
+library(forecast)
+library(ggfortify)
+library(ggplot2)
+library(ggrepel)
+library(gridExtra)
+library(gt)
+library(kableExtra)
+library(knitr)
+library(lubridate)
+library(readr)
+library(tseries)
+library(zoo)
+
+#Funciones
+resaltar_min <- function(x, x_num) {
+  cell_spec(
+    sprintf("%.3f", x),
+    bold = (x_num == min(x_num, na.rm = TRUE)),
+    color = ifelse(x_num == min(x_num, na.rm = TRUE), "#1E90FF", "black"),
+    format = "latex"
+  )
+}
+```
+
 \begin{titlepage}
 \centering
 \vspace*{0.5cm}
@@ -615,9 +644,848 @@ Ajustando el componente de tendencia de forma más flexible, se modela la estaci
 
 Es importante destacar que este modelo, a diferencia de los modelos ARIMA, SARIMA y ETS, permite realizar los pronósticos con una serie incompleta. Por lo tanto, no es necesario imputar valores antes de elaborar los pronósticos. 
 
-\newpage
+## Evaluación del desempeño
+
+La precisión de los pronósticos se evaluará utilizando observaciones que no hayan sido empleadas en la estimación de los modelos. Para ello, se aplicará un enfoque de evaluación fuera de la muestra (*out-of-sample*), dividiendo los datos disponibles en dos conjuntos: datos de entrenamiento (*training set*) y datos de prueba (*test set*). Por otro lado, el error de imputación será calculado comparando los valores imputados con los valores reales de la serie.
+
+Los datos de entrenamiento se utilizarán para la estimación de los parámetros de cada método de predicción, mientras que los datos de prueba se reservarán exclusivamente para evaluar su desempeño. Siguiendo la práctica habitual en el análisis de series temporales, se separarán las últimas observaciones de cada serie para conformar el conjunto de prueba (por ejemplo, en series de frecuencia mensual se reservarán las últimas 12 observaciones). 
+
+### Evaluación del desempeño de los métodos de imputación
+
+En una primera instancia se evaluará el desempeño de los métodos de imputación comparando los valores imputados con los valores originales de la serie antes de la introducción de datos faltantes. Para ello se utilizarán métricas de error como el error cuadrático medio (RMSE), el error absoluto medio (MAE) y el error porcentual absoluto medio (MAPE), que permiten cuantificar la capacidad de cada método para reconstruir adecuadamente los valores faltantes.
+
+### Evaluación del desempeño del pronóstico posterior
+
+En una segunda etapa se evaluará el impacto de los métodos de imputación sobre el desempeño de los modelos de pronóstico. Para ello se ajustarán distintos modelos de series temporales sobre las series imputadas y se generarán pronósticos para un horizonte determinado. Posteriormente, los valores pronosticados se compararán con los valores reales mediante métricas de error como RMSE, MAE y MAPE.
+
+### Métricas del error
+
+Para evaluar el desempeño tanto de los métodos de imputación como de los modelos de pronóstico se utilizarán distintas métricas de error comúnmente empleadas en el análisis de series temporales.
+
+En este contexto, el error se define como la diferencia entre un valor observado y el valor estimado o pronosticado por el modelo. En particular, se considerarán el error cuadrático medio (RMSE), el error absoluto medio (MAE) y el error porcentual absoluto medio (MAPE), cuyas expresiones se presentan a continuación.
+
+* Error absoluto medio (MAE): Esta métrica es una medida de la diferencia entre dos valores, es decir, permite saber que tan diferente es el valor predicho y el valor real u observado. Para que un error con valor positivo no cancele a un error con error negativo se usa el valor absoluto de la diferencia. Como interesa conocer el comportamiento del error de todas las observaciones y no solamente de una, entonces se obtiene el promedio de los valores absolutos de la diferencia.
+
+$$MAE = \frac{\sum_{t=1}^{n} |\hat{y}_t - y_t|}{n_m}$$
+
+* Error medio cuadrado (MSE)
+Esta métrica es muy útil para saber que tan cerca es la línea de ajuste de la regresión a las observaciones. Al igual que en caso anterior se evita que un error con valor positivo anule a uno con valor negativo, pero en lugar de usar el valor absoluto, se eleva al cuadrado la diferencia.
+Siempre da un valor positivo y entre más cercano sea a cero es mejor.
+
+$$MSE = \frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}$$
+
+* Raíz del error medio cuadrado (RMSE)
+Como la métrica anterior da el resultado en unidades cuadradas, para poder interpretarlo más fácilmente se saca la raíz cuadrada y de esta manera se obtiene el valor en las unidades originales.
+
+$$RMSE = \sqrt\frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}$$
+
+* Porcentaje de error medio absoluto (MAPE)
+Esta es una métrica de la precisión, pero se presenta como si fuera un porcentaje, como ventaja tiene que es independiente de la escala y fácil de interpretar. Como desventaja es que puede producir valores no definidos, infinito o muy cercanos a cero.
+El calculo es sencillo, para cada observación se obtiene su porcentaje de error y luego se calcula la media de todos esos valores.
+
+$$MAPE = \frac{100}{n_m}\sum_{t=1}^{n}\left| \frac{y_t - \hat{y}_t}{y_t} \right|$$
+siendo $y_t$ el valor observado, $\hat{y_t}$ el valor imputado o pronosticado y $n_m$ la cantidad de valores perdidos o pronosticados.
+
 
 # Aplicación
+
+Con el objetivo de evaluar el impacto de distintos métodos de imputación sobre el desempeño de modelos de pronóstico en series temporales univariadas, se plantea un procedimiento experimental basado en la introducción controlada de datos faltantes en series originalmente completas. Esta estrategia permite conocer en todo momento los valores reales de las observaciones eliminadas y, en consecuencia, evaluar la calidad de las imputaciones realizadas y su efecto sobre la precisión de los pronósticos.
+
+Se selecciona una serie temporal univariada completa, es decir, sin valores faltantes, y sobre esta se realiza un análisis exploratorio inicial con el fin de identificar sus principales características, tales como la presencia de tendencia, estacionalidad, posibles valores atípicos y estructura de autocorrelación. Asimismo, cada serie se divide en un conjunto de entrenamiento y un conjunto de prueba. El conjunto de entrenamiento se utiliza para realizar la imputación de los datos faltantes y ajustar los modelos de pronóstico, mientras que el conjunto de prueba permanece sin modificaciones y se emplea exclusivamente para evaluar la capacidad predictiva de los modelos.
+
+A partir de las series de entrenamiento se generan artificialmente distintos escenarios de datos faltantes. Para ello se consideran diferentes porcentajes de observaciones ausentes y distintos mecanismos de generación de datos faltantes, reproduciendo situaciones que pueden presentarse en aplicaciones reales.
+
+Una vez generados los escenarios de datos faltantes, se aplican los diferentes métodos de imputación considerados para reconstruir las observaciones ausentes. Con el propósito de reducir el efecto del azar asociado a la ubicación de los datos faltantes, cada combinación de serie, mecanismo y porcentaje de faltantes se replica 100 veces utilizando distintas configuraciones de eliminación aleatoria. De esta manera, los resultados obtenidos corresponden al promedio de un elevado número de iteraciones, proporcionando estimaciones más estables del desempeño de cada método.
+
+La calidad de las imputaciones se evalúa comparando los valores imputados con las observaciones originales eliminadas artificialmente. Para cuantificar la precisión de cada método se utilizan las métricas RMSE, MAE y MAPE, anteriormente definidas.
+
+Luego, utilizando las series imputadas, se ajustan los modelos de pronóstico considerados. Los pronósticos se generan para horizontes de h=1, 3, 6 y 12 períodos hacia adelante. Finalmente, el desempeño predictivo de cada modelo se evalúa comparando los valores pronosticados con las observaciones reales del conjunto de prueba mediante las mismas métricas de error utilizadas para evaluar la imputación. Esto permite analizar no solo la capacidad de cada método para reconstruir los valores faltantes, sino también el impacto que dichas imputaciones tienen sobre la precisión de los pronósticos posteriores.
+
+El procedimiento completo puede resumirse en las siguientes etapas:
+
+1 - Selección de la serie temporal. Se seleccionan series temporales univariadas completas, que servirán como referencia para la generación de los escenarios experimentales.
+
+2 - Análisis exploratorio de la serie. Se estudian las principales características de cada serie, incluyendo tendencia, estacionalidad, autocorrelación y posibles valores atípicos. Asimismo, se define la partición entre conjunto de entrenamiento y conjunto de prueba.
+
+3 - Generación de datos faltantes. Se introducen valores faltantes de forma artificial sobre el conjunto de entrenamiento, considerando distintos porcentajes y mecanismos de generación de faltantes.
+
+4 - Aplicación de los métodos de imputación. Se imputan las observaciones faltantes mediante las técnicas consideradas en el estudio.
+
+5 - Evaluación de la imputación. Se comparan los valores imputados con los valores originales mediante las métricas RMSE, MAE y MAPE.
+Ajuste de los modelos de pronóstico. Se ajustan los modelos ARIMA/SARIMA y ETS utilizando las series imputadas, mientras que Prophet se ajusta directamente sobre la serie con datos faltantes.
+
+6 - Generación de pronósticos. Se obtienen predicciones para horizontes de h=1, 3, 6 y 12.
+
+7 - Evaluación del pronóstico. Se comparan los pronósticos con las observaciones del conjunto de prueba utilizando las métricas RMSE, MAE y MAPE.
+
+8 - Comparación de resultados. Se analizan conjuntamente los errores de imputación y de pronóstico para determinar el efecto que tienen los distintos métodos de imputación sobre el desempeño predictivo de cada modelo.
+
+
+## Caso de aplicación: Consumo de electricidad {.unnumbered}
+
+```{r}
+#Carga de datos
+datos <- read_csv("demanda.csv", show_col_types = FALSE) %>%
+  mutate(fecha = ymd(fecha),
+         anio  = year(fecha),
+         mes  = month(fecha),
+         demanda = demanda/1000)
+
+vals <- datos$demanda
+
+serie <- ts(vals, 
+            start = c(2001, 1), 
+            frequency = 12)
+
+serie_train <- window(serie,start=c(2010,1), end = c(2024, 12))
+serie_test <- window(serie, start = c(2025, 1)) 
+#serie_test tiene observaciones que se guardan para luego evaluar pronosticos
+```
+
+La electricidad constituye un insumo esencial para el funcionamiento de la economía y el bienestar social. En particular, el análisis de la demanda de energía eléctrica resulta de gran interés para los organismos reguladores, las empresas proveedoras y los investigadores, ya que permite comprender los patrones de consumo.
+
+En este trabajo se utilizará una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación Argentina. La serie abarca mediciones mensuales desde enero de 2010 hasta diciembre de 2025, y cuenta con 300 observaciones, que reflejan el consumo eléctrico total del país en gigavatios-hora (en miles de GWh). 
+
+
+## Análisis descriptivo
+
+Se realizó una partición de la serie temporal en dos subconjuntos. Las observaciones comprendidas entre enero de 2010 y diciembre de 2024 conforman el conjunto de entrenamiento, utilizado para la especificación y ajuste del modelo. Por su parte, los datos de 2025 se reservaron como conjunto de prueba para evaluar la capacidad predictiva del modelo seleccionado sobre datos no utilizados en su estimación.
+
+```{r fig-grafico1, fig.cap="Demanda mensual de energía eléctrica en Argentina (2010–2024)", fig.height=3, fig.width=5}
+ggplot() +
+  autolayer(serie_train, series = "Serie de entrenamiento")  +
+  scale_colour_manual(
+    name = "Serie",
+    values = c(
+      "Serie de entrenamiento" = "black"
+      )
+  ) +
+  scale_fill_manual(
+    name = "Serie",
+    values = c(
+      "Serie de entrenamiento" = "black"
+    )
+  ) +
+  scale_x_continuous(breaks = seq(2010, 2025, by = 2)) +
+  labs(
+    title = NULL,
+    x = "Año",
+    y = expression(z[t])
+  ) +
+  theme_minimal(base_size = 13) +
+    theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+```
+
+La @fig-grafico1 muestra una tendencia creciente en la demanda a lo largo del período analizado, aunque dicha tendencia no es estrictamente lineal.
+
+En 2020 se observa un evento atípico: un quiebre o shock estructural asociado a la pandemia de COVID-19. Por otro lado, en marzo de 2023 se observa un pico de demanda asociado a condiciones climáticas extremas (ola de calor).
+
+```{r fig-grafico2, fig.cap= "Distribución de la demanda eléctrica por año", fig.height=3, fig.width=5.5}
+demanda_filtrada <- subset(datos, 2010 <= anio & anio < 2025)
+ggplot(demanda_filtrada, aes(x = factor(anio), y = demanda)) +
+  geom_boxplot(fill = "slateblue4", alpha = 0.7) +
+  labs(x = "Año", y = "Demanda (miles de GWh)") +
+  ggtitle(NULL)+
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+``` 
+
+En la @fig-grafico2 se observa que antes del 2015 la demanda fue aumentando con el paso de los años, entre 2015 y 2019 la demanda se mantuvo relativamente estable, mientras que en 2020 se produjo una caída marcada con mayor dispersión, asociada al impacto de la pandemia. A partir de 2021, la mediana anual comienza a incrementarse de forma sostenida, alcanzando máximos en 2023–2024. Asimismo, en los años más recientes se evidencia una mayor variabilidad intraanual, lo cual refleja la aparición de episodios extremos de consumo, como olas de calor e inviernos más intensos.
+
+```{r fig-grafico3, fig.cap= "Gráfico estacional de la serie por año", fig.height=3, fig.width=5.5}
+p <- ggseasonplot(serie_train) +
+  labs(x = "Mes",
+       y = "Demanda (miles de GWh)") +
+  ggtitle(NULL) +                     
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none",
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+
+datos_plot <- p$data
+etiquetas_izquierda <- c(2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)
+datos_izq <- datos_plot %>% filter(year %in% etiquetas_izquierda, cycle == 1)
+datos_der <- datos_plot %>% filter(!(year %in% etiquetas_izquierda), cycle == 12)
+
+grafico_final_centrado <- p +
+  geom_text_repel(data = datos_izq, 
+                  aes(x = time, y = y, label = year, color = as.factor(year)),
+                  nudge_x = -0.055,      
+                  size = 3.5,            
+                  direction = "y",      
+                  segment.color = NA,   
+                  show.legend = FALSE,
+                  hjust = 0.5) +         
+  geom_text_repel(data = datos_der, 
+                  aes(x = time, y = y, label = year, color = as.factor(year)),
+                  nudge_x = 0.055,       
+                  size = 3.5,
+                  direction = "y", 
+                  segment.color = NA,   
+                  show.legend = FALSE,
+                  hjust = 0.5) +      
+  coord_cartesian(xlim = c(-1/12, 1), expand = FALSE, clip = "off") + 
+  theme(plot.margin = margin(t = 10, r = 15, b = 10, l = 15)) 
+
+grafico_final_centrado
+```
+
+En la @fig-grafico3 se observa que la serie tiene un patrón claramente estacional, donde en cada año se ven picos y valles recurrentes, típicos de la demanda energética que depende del clima (veranos con aire acondicionado, inviernos con calefacción eléctrica). La amplitud de los picos varía con el tiempo, mostrando un aumento de la estacionalidad en los últimos años.
+
+```{r fig-grafico4, fig.cap= "Gráfico estacional de la serie por mes", fig.height=3, fig.width=5.5}
+ggmonthplot(serie_train)+
+  labs(x = "Mes",
+       y = "Demanda (miles de GWh)") +
+  ggtitle(NULL) +                     
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none",
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+```
+
+La @fig-grafico4 evidencia la presencia de un componente estacional anual en la demanda eléctrica. Se observan picos en los meses de marzo y enero, asociados a olas de calor, y valores mínimos en abril. Las medias mensuales confirman un patrón recurrente de consumo que se repite año tras año.
+
+```{r fig-grafico5, fig.cap= "Función de autocorrelación de la serie", fig.height=3, fig.width=5.5}
+ggAcf(serie_train, lag.max = 96) + 
+      scale_x_continuous(breaks = seq(0,96,6), labels = seq(0,96,6)) +
+      labs(title = NULL,x = "Rezago (meses)", y = "FAC") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+
+```
+
+De la @fig-grafico5 se puede decir que la autocorrelación no decae rápidamente, lo cual indica la presencia de dependencia a largo plazo (tendencia y/o estacionalidad). Además, las autocorrelaciones positivas en los primeros rezagos sugieren que la demanda de un mes está muy relacionada con los meses inmediatamente anteriores.
+
+Se observan picos significativos en rezagos múltiplos de 12 meses, lo cual evidencia la estacionalidad anual de la serie.
+
+```{r fig-grafico6, fig.cap= "Función de autocorrelación parcial de la serie", fig.height=3, fig.width=5.5}
+ggPacf(serie_train, lag.max = 96) + 
+      scale_x_continuous(breaks = seq(0,96,6), labels = seq(0,96,6)) +
+      labs(title = NULL,x = "Rezago (meses)", y = "FACP") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.major = element_line(color = "white"),
+    panel.grid.minor = element_line(color = "white")
+  )
+
+```
+
+Por otro lado, en la @fig-grafico6 se observan valores distintos de cero en los primeros rezagos, indicando la importancia de términos autorregresivos de bajo orden (AR).
+
+Al igual que en la ACF, aparecen picos en rezagos estacionales (12, 24, …), lo cual confirma la estacionalidad anual.
+
+
+## Resultados
+
+```{r tabla1, results='asis'}
+tabla <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Errores de imputación (Escenario 10\\% MCAR)",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla2, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "10\\% MCAR, pronosticando con ARIMA",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla3, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_10_ETS_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_10_ETS_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_10_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "10\\% MCAR, pronosticando con ETS",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla4, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    caption = "10\\% MCAR, pronosticando con Prophet",
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  )
+```
+
+```{r tabla5, results='asis'}
+tabla <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Errores de imputación (Escenario 25\\% MCAR)",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla6, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "25\\% MCAR, pronosticando con ARIMA",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla7, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_25_ETS_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_25_ETS_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_25_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "25\\% MCAR, pronosticando con ETS",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla8, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    caption = "25\\% MCAR, pronosticando con Prophet",
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  )
+```
+
+```{r tabla9, results='asis'}
+tabla <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "Errores de imputación (Escenario 40\\% MCAR)",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla10, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "40\\% MCAR, pronosticando con ARIMA",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla11, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_40_ETS_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_40_ETS_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_40_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    linesep = "",
+    caption = "40\\% MCAR, pronosticando con ETS",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla12, results='asis'}
+h3  <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    caption = "40\\% MCAR, pronosticando con Prophet",
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  )
+```
 
 \newpage
 
