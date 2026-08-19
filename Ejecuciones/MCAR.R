@@ -8,6 +8,7 @@ n_iteraciones <- 100
 h_forecast <- 3
 set.seed(123) 
 
+#-------------------------------------------------------------------------------
 # ARIMA
 resultados_acum <- NULL
 
@@ -34,7 +35,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_ARIMA_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_ARIMA_h3.rds")
 
 #-------------------------------------------------------------------------------
 # ETS
@@ -64,7 +65,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_ETS_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_ETS_h3.rds")
 
 #-------------------------------------------------------------------------------
 # PROPHET
@@ -86,7 +87,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_PROPHET_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_PROPHET_h3.rds")
 
 #-------------------------------------------------------------------------------
 # 25%, h=3
@@ -123,7 +124,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_ARIMA_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_ARIMA_h3.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -154,7 +155,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_ETS_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_ETS_h3.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -176,7 +177,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_PROPHET_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_PROPHET_h3.rds")
 
 #-------------------------------------------------------------------------------
 # 40%, h=3
@@ -213,7 +214,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_ARIMA_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_ARIMA_h3.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -244,7 +245,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_ETS_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_ETS_h3.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -266,7 +267,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_PROPHET_h3.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_PROPHET_h3.rds")
 
 
 #-------------------------------------------------------------------------------
@@ -303,7 +304,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_ARIMA_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_ARIMA_h6.rds")
 
 #-------------------------------------------------------------------------------
 # ETS
@@ -333,7 +334,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_ETS_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_ETS_h6.rds")
 
 #-------------------------------------------------------------------------------
 # PROPHET
@@ -355,7 +356,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_PROPHET_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_PROPHET_h6.rds")
 
 #-------------------------------------------------------------------------------
 # 25%, h=6
@@ -392,7 +393,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_ARIMA_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_ARIMA_h6.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -423,7 +424,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_ETS_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_ETS_h6.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -445,7 +446,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_PROPHET_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_PROPHET_h6.rds")
 
 #-------------------------------------------------------------------------------
 # 40%, h=6
@@ -482,7 +483,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_ARIMA_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_ARIMA_h6.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -513,7 +514,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_ETS_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_ETS_h6.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -535,7 +536,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_PROPHET_h6.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_PROPHET_h6.rds")
 
 
 
@@ -573,7 +574,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_ARIMA_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_ARIMA_h12.rds")
 
 #-------------------------------------------------------------------------------
 # ETS
@@ -603,7 +604,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_ETS_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_ETS_h12.rds")
 
 #-------------------------------------------------------------------------------
 # PROPHET
@@ -625,7 +626,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_10_PROPHET_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_10_PROPHET_h12.rds")
 
 #-------------------------------------------------------------------------------
 # 25%, h=12
@@ -662,7 +663,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_ARIMA_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_ARIMA_h12.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -693,7 +694,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_ETS_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_ETS_h12.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -715,7 +716,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_25_PROPHET_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_25_PROPHET_h12.rds")
 
 #-------------------------------------------------------------------------------
 # 40%, h=12
@@ -752,7 +753,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_ARIMA_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_ARIMA_h12.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -783,7 +784,7 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_ETS_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_ETS_h12.rds")
 
 #-------------------------------------------------------------------------------
 
@@ -805,5 +806,5 @@ for (i in 1:n_iteraciones) {
 
 resultados_finales <- resultados_acum
 resultados_finales[, -1] <- resultados_finales[, -1] / n_iteraciones
-saveRDS(resultados_finales, file = "Resultados/resultados_MCAR_40_PROPHET_h12.rds")
+saveRDS(resultados_finales, file = "Resultados/MCAR/resultados_MCAR_40_PROPHET_h12.rds")
 

@@ -44,7 +44,7 @@ serie_test <- window(ts, start = c(2025, 1))
 introducir_NA <- function(y, prop = 0.1) {
   y_na <- y
   n <- length(y)
-  idx <- sample(1:n, size = floor(prop * n))
+  idx <- sample(2:(n - 1), size = floor(prop * n))
   y_na[idx] <- NA
   return(y_na)
 }
@@ -62,7 +62,7 @@ introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
     if (na_actual + tam_bloque > total_na) {
       tam_bloque <- total_na - na_actual
     }
-    inicio <- sample(1:(n - tam_bloque + 1), 1)
+    inicio <- sample((tam_max + 1):(n - tam_bloque - tam_max + 1), 1)
     indices <- inicio:(inicio + tam_bloque - 1)
     nuevos_na <- sum(!is.na(y_na[indices]))
     y_na[indices] <- NA
@@ -76,8 +76,11 @@ introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
 introducir_picos <- function(y, percentil = 0.8, prop = 0.5) {
   y_na <- y
   umbral <- quantile(y, percentil, na.rm = TRUE)
-  candidatos <- which(y > umbral)
-    n_eliminar <- floor(prop * length(candidatos))
+  candidatos <- which(
+    y > umbral &
+      seq_along(y) > tam_max &
+      seq_along(y) <= n - tam_max
+  )
   idx <- sample(candidatos, n_eliminar)
     y_na[idx] <- NA
   return(y_na)

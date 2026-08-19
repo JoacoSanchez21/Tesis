@@ -903,7 +903,7 @@ Al igual que en la ACF, aparecen picos en rezagos estacionales (12, 24, …), lo
 ## Resultados
 
 ```{r tabla1, results='asis'}
-tabla <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h3.rds")
+tabla <- readRDS("Resultados/MCAR/resultados_MCAR_10_ARIMA_h3.rds")
 
 tabla <- tabla %>%
   select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
@@ -939,9 +939,9 @@ tabla %>%
 ```
 
 ```{r tabla2, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_10_ARIMA_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_10_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_10_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_10_ARIMA_h12.rds")
 
 h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
 h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
@@ -995,9 +995,9 @@ tabla %>%
 ```
 
 ```{r tabla3, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_10_ETS_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_10_ETS_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_10_ETS_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_10_ETS_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_10_ETS_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_10_ETS_h12.rds")
 
 h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
 h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
@@ -1051,9 +1051,9 @@ tabla %>%
 ```
 
 ```{r tabla4, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_10_PROPHET_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_10_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_10_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_10_PROPHET_h12.rds")
 
 tabla <- data.frame(
   Modelo = "Prophet",
@@ -1098,7 +1098,7 @@ tabla %>%
 ```
 
 ```{r tabla5, results='asis'}
-tabla <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h3.rds")
+tabla <- readRDS("Resultados/MCAR/resultados_MCAR_25_ARIMA_h3.rds")
 
 tabla <- tabla %>%
   select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
@@ -1134,9 +1134,9 @@ tabla %>%
 ```
 
 ```{r tabla6, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_25_ARIMA_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_25_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_25_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_25_ARIMA_h12.rds")
 
 h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
 h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
@@ -1190,9 +1190,9 @@ tabla %>%
 ```
 
 ```{r tabla7, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_25_ETS_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_25_ETS_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_25_ETS_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_25_ETS_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_25_ETS_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_25_ETS_h12.rds")
 
 h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
 h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
@@ -1246,9 +1246,9 @@ tabla %>%
 ```
 
 ```{r tabla8, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_25_PROPHET_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_25_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_25_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_25_PROPHET_h12.rds")
 
 tabla <- data.frame(
   Modelo = "Prophet",
@@ -1293,7 +1293,7 @@ tabla %>%
 ```
 
 ```{r tabla9, results='asis'}
-tabla <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h3.rds")
+tabla <- readRDS("Resultados/MCAR/resultados_MCAR_40_ARIMA_h3.rds")
 
 tabla <- tabla %>%
   select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
@@ -1329,9 +1329,9 @@ tabla %>%
 ```
 
 ```{r tabla10, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_40_ARIMA_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_40_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_40_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_40_ARIMA_h12.rds")
 
 h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
 h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
@@ -1385,9 +1385,9 @@ tabla %>%
 ```
 
 ```{r tabla11, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_40_ETS_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_40_ETS_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_40_ETS_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_40_ETS_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_40_ETS_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_40_ETS_h12.rds")
 
 h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
 h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
@@ -1441,9 +1441,9 @@ tabla %>%
 ```
 
 ```{r tabla12, results='asis'}
-h3  <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h3.rds")
-h6  <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h6.rds")
-h12 <- readRDS("Resultados/resultados_MCAR_40_PROPHET_h12.rds")
+h3  <- readRDS("Resultados/MCAR/resultados_MCAR_40_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MCAR/resultados_MCAR_40_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MCAR/resultados_MCAR_40_PROPHET_h12.rds")
 
 tabla <- data.frame(
   Modelo = "Prophet",
@@ -1494,7 +1494,6 @@ tabla %>%
 \newpage
 
 # Bibliografía
-
 ::: {#refs}
 :::
 
