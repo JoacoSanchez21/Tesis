@@ -55,20 +55,20 @@ introducir_NA <- function(y, prop = 0.1) {
 introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
   y_na <- y
   n <- length(y)
-  total_na <- ceiling(prop * n)  # cantidad total de NA a introducir
+  total_na <- ceiling(prop * n)
   na_actual <- 0
-    while (na_actual < total_na) {
+  while (na_actual < total_na) {
     tam_bloque <- sample(tam_min:tam_max, 1)
     if (na_actual + tam_bloque > total_na) {
       tam_bloque <- total_na - na_actual
     }
-    inicio <- sample((tam_max + 1):(n - tam_bloque - tam_max + 1), 1)
+    inicio <- sample(2:(n - tam_bloque), 1)
     indices <- inicio:(inicio + tam_bloque - 1)
     nuevos_na <- sum(!is.na(y_na[indices]))
     y_na[indices] <- NA
     na_actual <- na_actual + nuevos_na
   }
-    return(y_na)
+  return(y_na)
 }
 
 #-------------------------------------------------------------------------------
