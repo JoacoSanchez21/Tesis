@@ -604,7 +604,7 @@ Una vez ajustado el modelo a la serie observada, los pronósticos se obtienen de
 
 Es importante destacar que estos modelos requieren series completas para su estimación. Por este motivo, las observaciones faltantes son reemplazadas previamente mediante los distintos métodos de imputación considerados en este trabajo. Una vez completada la serie, el modelo se ajusta sobre los datos imputados y se generan pronósticos para los distintos horizontes de predicción analizados.
 
-La especificación del modelo se realiza de forma automática mediante el procedimiento implementado en la función `auto.arima()` del paquete `forecast` de R. Este algoritmo selecciona los órdenes autorregresivos, de diferenciación y de media móvil que optimizan determinados criterios de información, considerando además la posible presencia de componentes estacionales.
+La especificación del modelo se realiza de forma automática mediante el procedimiento implementado en la función `auto.arima` del paquete `forecast` de R. Este algoritmo selecciona los órdenes autorregresivos, de diferenciación y de media móvil que optimizan determinados criterios de información, considerando además la posible presencia de componentes estacionales.
 
 ### Modelo ETS
 
@@ -690,17 +690,17 @@ siendo $y_t$ el valor observado, $\hat{y_t}$ el valor imputado o pronosticado y 
 
 # Aplicación
 
-Con el objetivo de evaluar el impacto de distintos métodos de imputación sobre el desempeño de modelos de pronóstico en series temporales univariadas, se plantea un procedimiento experimental basado en la introducción controlada de datos faltantes en series originalmente completas. Esta estrategia permite conocer en todo momento los valores reales de las observaciones eliminadas y, en consecuencia, evaluar la calidad de las imputaciones realizadas y su efecto sobre la precisión de los pronósticos. A la hora de introducir valores faltantes, no se tendrán en cuenta los extremos de la serie, dado que esto implicaría tener que realizar un pronóstico (hacía adelante o hacía atras) en lugar de una imputación.
+Con el objetivo de evaluar el impacto de distintos métodos de imputación sobre el desempeño de modelos de pronóstico en series temporales univariadas, se plantea un procedimiento experimental basado en la introducción controlada de datos faltantes en series originalmente completas. Esta estrategia permite conocer en todo momento los valores reales de las observaciones eliminadas y, en consecuencia, evaluar la calidad de las imputaciones realizadas y su efecto sobre la precisión de los pronósticos. Al introducir los valores faltantes, no se consideraron los extremos de la serie, dado que su imputación requeriría extrapolar a partir de las observaciones disponibles, en lugar de interpolar utilizando información a ambos lados del valor faltante.
 
 Se selecciona una serie temporal univariada completa, es decir, sin valores faltantes, y sobre esta se realiza un análisis exploratorio inicial con el fin de identificar sus principales características, tales como la presencia de tendencia, estacionalidad, posibles valores atípicos y estructura de autocorrelación. Asimismo, cada serie se divide en un conjunto de entrenamiento y un conjunto de prueba. El conjunto de entrenamiento se utiliza para realizar la imputación de los datos faltantes y ajustar los modelos de pronóstico, mientras que el conjunto de prueba permanece sin modificaciones y se emplea exclusivamente para evaluar la capacidad predictiva de los modelos.
 
 A partir de las series de entrenamiento se generan artificialmente distintos escenarios de datos faltantes. Para ello se consideran diferentes porcentajes de observaciones ausentes y distintos mecanismos de generación de faltantes, reproduciendo situaciones que pueden presentarse en situaciones reales. En todos los casos, la introducción de valores faltantes se restringe al interior de la serie, preservando los extremos inicial y final para garantizar que el procedimiento corresponda a una imputación y no a un problema de pronóstico hacia adelante o hacia atrás.
 
-Una vez generados los escenarios de datos faltantes, se aplican los diferentes métodos de imputación considerados para reconstruir las observaciones ausentes. Con el propósito de reducir el efecto del azar asociado a la ubicación de los datos faltantes, cada combinación de serie, mecanismo y porcentaje de faltantes se replica 100 veces utilizando distintas configuraciones de eliminación aleatoria. De esta manera, los resultados obtenidos corresponden al promedio de un elevado número de iteraciones, proporcionando estimaciones más estables del desempeño de cada método.
+Una vez generados los escenarios de datos faltantes, se aplican los diferentes métodos de imputación considerados para reconstruir las observaciones ausentes. Con el propósito de reducir el efecto del azar asociado a la ubicación de los datos faltantes, cada combinación de serie, mecanismo y porcentaje de faltantes se replica 100 veces utilizando distintas configuraciones de eliminación aleatoria. De esta manera, los resultados obtenidos corresponden al promedio de un elevado número de iteraciones, proporcionando estimaciones más estables del desempeño de cada método. 
 
 La calidad de las imputaciones se evalúa comparando los valores imputados con las observaciones originales eliminadas artificialmente. Para cuantificar la precisión de cada método se utilizan las métricas RMSE, MAE y MAPE, anteriormente definidas.
 
-Luego, utilizando las series imputadas, se ajustan los modelos de pronóstico ARIMA y ETS, mientras que el modelo prophet se ajusta usando la serie con valores faltantes. Los pronósticos se generan para horizontes de $h=3, 6\text{ y }12$ períodos hacia adelante. Finalmente, el desempeño predictivo de cada modelo se evalúa comparando los valores pronosticados con las observaciones reales del conjunto de prueba mediante las mismas métricas de error utilizadas para evaluar la imputación. Esto permite analizar no solo la capacidad de cada método para reconstruir los valores faltantes, sino también el impacto que dichas imputaciones tienen sobre la precisión de los pronósticos posteriores.
+Luego, utilizando las series imputadas, se ajustan los modelos de pronóstico ARIMA/SARIMA y ETS, mientras que el modelo prophet se ajusta usando la serie con valores faltantes. Los pronósticos se generan para horizontes de $h=3, 6\text{ y }12$ períodos hacia adelante. Finalmente, el desempeño predictivo de cada modelo se evalúa comparando los valores pronosticados con las observaciones reales del conjunto de prueba mediante las mismas métricas de error utilizadas para evaluar la imputación. Esto permite analizar no solo la capacidad de cada método para reconstruir los valores faltantes, sino también el impacto que dichas imputaciones tienen sobre la precisión de los pronósticos posteriores. El ajuste de estos modelos se hace mediante la función `auto.arima` del paquete `forecast` de R. Esta función realiza una búsqueda entre distintas especificaciones del modelo y selecciona aquella que optimiza un criterio de información. Además, permite considerar automáticamente la necesidad de diferenciación no estacional y estacional, así como la inclusión de componentes autorregresivos y de media móvil, tanto estacionales como no estacionales.
 
 El procedimiento completo puede resumirse en las siguientes etapas:
 
@@ -744,13 +744,13 @@ serie_test <- window(serie, start = c(2025, 1))
 #serie_test tiene observaciones que se guardan para luego evaluar pronosticos
 ```
 
-En este trabajo se utilizará una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación Argentina. La serie abarca mediciones mensuales desde enero de 2010 hasta diciembre de 2025, y cuenta con 300 observaciones, que reflejan el consumo eléctrico total del país en gigavatios-hora (en miles de GWh). 
+En este trabajo se utilizó una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación Argentina. La serie comprende observaciones mensuales desde enero de 2010 hasta diciembre de 2025, con un total de 300 observaciones, expresadas en miles de GWh.
 
 ## Análisis descriptivo
 
 Se realizó una partición de la serie temporal en dos subconjuntos. Las observaciones comprendidas entre enero de 2010 y diciembre de 2024 conforman el conjunto de entrenamiento, utilizado para la especificación y ajuste del modelo. Por su parte, los datos de 2025 se reservaron como conjunto de prueba para evaluar la capacidad predictiva del modelo seleccionado sobre datos no utilizados en su estimación.
 
-Como paso inicial, se verificó que el análisis a realizar sea significativo. A continuación, se presenta el gráfico de la serie temporal analizada.
+Como primera etapa, se realizó un análisis exploratorio de la serie con el objetivo de identificar sus principales características y evaluar los patrones que podrían resultar relevantes para el proceso de imputación y pronóstico. En primer lugar, se analizó gráficamente la evolución temporal de la serie, presentada en la @fig-grafico1
 
 ```{r fig-grafico1, fig.cap="Demanda mensual de energía eléctrica en Argentina (2010–2024)", fig.height=3, fig.width=5}
 ggplot() +
@@ -783,7 +783,7 @@ ggplot() +
   )
 ```
 
-La @fig-grafico1 muestra una tendencia creciente en la demanda a lo largo del período analizado, aunque dicha tendencia no es estrictamente lineal. Esto implica que la serie no presenta estacionariedad en media. Además, se analizaron la Función de Autocorrelación Muestral (FACM) y la Función de Autocorrelación Parcial Muestral (PACFM), las cuales se presentan en la @fig-grafico2 y @fig-grafico3, respectivamente.
+La @fig-grafico1 muestra una tendencia creciente de la demanda a lo largo del período analizado, aunque dicha evolución no es estrictamente lineal. Este comportamiento sugiere la ausencia de estacionariedad en media de la serie. Además, se analizaron la Función de Autocorrelación Muestral (FACM) y la Función de Autocorrelación Parcial Muestral (PACFM), las cuales se presentan en la @fig-grafico2 y @fig-grafico3, respectivamente.
 
 ```{r fig-grafico2, fig.cap= "Función de autocorrelación muestral", fig.height=3, fig.width=5.5}
 ggAcf(serie_train, lag.max = 96) + 
@@ -811,15 +811,17 @@ ggPacf(serie_train, lag.max = 96) +
 
 ```
 
-En la @fig-grafico2 se observa que la autocorrelación no decae rápidamente, lo cual indica la presencia de dependencia a largo plazo (tendencia y/o estacionalidad). Además, las autocorrelaciones positivas en los primeros rezagos sugieren que la demanda de un mes está muy relacionada con los meses inmediatamente anteriores.
+En la @fig-grafico2 se observa una autocorrelación que presenta un decaimiento lento, lo que resulta consistente con la presencia de una estructura temporal persistente. Asimismo, las autocorrelaciones positivas en los primeros rezagos indican una asociación entre la demanda de un mes y la correspondiente a meses inmediatamente anteriores.
 
-Por otro lado, en la @fig-grafico3 se observan valores distintos de cero en los primeros rezagos, indicando la importancia de términos autorregresivos de bajo orden (AR).
+Por otro lado, en la @fig-grafico3 se observan autocorrelaciones parciales significativas en los primeros rezagos, lo que sugiere la presencia de dependencia de corto plazo.
 
-En ambos gráficos se presentan picos significativos en rezagos múltiplos de 12 meses, lo cual evidencia la estacionalidad anual de la serie.
+En ambos gráficos se observan picos significativos en rezagos múltiplos de 12 meses, lo que sugiere la presencia de un patrón estacional anual.
+
+Estas características de tendencia, estacionalidad y cambios estructurales resultan especialmente relevantes en el contexto de la imputación, ya que distintos métodos pueden afectar de manera diferente la preservación de la estructura temporal de la serie.
 
 En la @fig-grafico4 se presenta el comportamiento estacional de la serie por año y mes.
 
-```{r fig-grafico4, fig.cap= "Distribución de la demanda eléctrica por año", fig.height=3, fig.width=5.5}
+```{r fig-grafico4, fig.cap= "Distribución anual de la demanda mensual de electricidad en Argentina", fig.height=3, fig.width=5.5}
 demanda_filtrada <- subset(datos, 2010 <= anio & anio < 2025)
 ggplot(demanda_filtrada, aes(x = factor(anio), y = demanda)) +
   geom_boxplot(fill = "slateblue4", alpha = 0.7) +
@@ -833,9 +835,9 @@ ggplot(demanda_filtrada, aes(x = factor(anio), y = demanda)) +
   )
 ``` 
 
-En la @fig-grafico4 se observa que antes del 2015 la demanda fue aumentando con el paso de los años, entre 2015 y 2019 la demanda se mantuvo relativamente estable, mientras que en 2020 se produjo una caída marcada con mayor dispersión, asociada al impacto de la pandemia. A partir de 2021, la mediana anual comienza a incrementarse de forma sostenida, alcanzando máximos en 2023–2024. Asimismo, en los años más recientes se evidencia una mayor variabilidad intraanual, lo cual refleja la aparición de episodios extremos de consumo, como olas de calor e inviernos más intensos. **TRANSFORMACION?**
+En la @fig-grafico4 se observa que antes del 2015 la demanda fue aumentando con el paso de los años, entre 2015 y 2019 la demanda se mantuvo relativamente estable, mientras que en 2020 se produjo una caída marcada con mayor dispersión, asociada al impacto de la pandemia. A partir de 2021, la mediana anual comienza a incrementarse de forma sostenida, alcanzando máximos en 2023–2024. Asimismo, en los años más recientes se evidencia una mayor variabilidad intraanual, lo cual refleja la aparición de episodios extremos de consumo, como olas de calor e inviernos más intensos.
 
-```{r fig-grafico5, fig.cap= "Gráfico estacional de la serie por año", fig.height=3, fig.width=5.5}
+```{r fig-grafico5, fig.cap= "Evolución de la demanda mensual por año y mes", fig.height=3, fig.width=5.5}
 p <- ggseasonplot(serie_train) +
   labs(x = "Mes",
        y = "Demanda (miles de GWh)") +
@@ -878,7 +880,7 @@ grafico_final_centrado <- p +
 grafico_final_centrado
 ```
 
-En la @fig-grafico5 se observa que la serie tiene un patrón claramente estacional, donde en cada año se ven picos y valles recurrentes, típicos de la demanda energética que depende del clima (veranos con aire acondicionado, inviernos con calefacción eléctrica). La amplitud de los picos varía con el tiempo, mostrando un aumento de la estacionalidad en los últimos años.
+En la @fig-grafico5 se observa que la serie tiene un patrón claramente estacional, donde en cada año se ven picos y valles recurrentes, consistentes con una demanda energética influenciada por factores climáticos, como el uso de sistemas de climatización durante períodos de temperaturas extremas. La amplitud de las fluctuaciones estacionales varía a lo largo del período, observándose valores mayores en los años más recientes
 
 ```{r fig-grafico6, fig.cap= "Gráfico estacional de la serie por mes", fig.height=3, fig.width=5.5}
 ggmonthplot(serie_train)+
