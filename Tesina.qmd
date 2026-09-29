@@ -14,6 +14,8 @@ format:
           \usepackage{colortbl}
           \definecolor{azulindice}{RGB}{70, 130, 180}
           
+          \usepackage[justification=centering, format=plain]{caption}
+          
           \renewcommand{\contentsname}{\textcolor{azulindice}{Índice}}
           
           \pagestyle{fancy}
@@ -290,7 +292,7 @@ Hay varios tipos de observaciones faltantes:
 
 Para series temporales univariadas, el panorama de los mecanismos de datos faltantes es ligeramente diferente. A primera vista, solo hay una variable en los datos. Sin embargo, el tiempo (que se da implícitamente) debe tratarse como una variable al determinar el mecanismo de datos faltantes de un conjunto de datos. Otra diferencia radica en que los algoritmos de imputación de series temporales no necesitan basarse únicamente en covariables para la estimación de valores faltantes, sino que también pueden utilizar las características de las series temporales.
 
-En este contexto, los mecanismos MCAR y MAR tienden a presentar comportamientos similares en la práctica, ya que ambos permiten que los valores faltantes sean estimados a partir de la estructura temporal observada. En el caso de datos faltantes completamente al azar (MCAR), la probabilidad de que una observación esté ausente es independiente tanto del instante temporal como del valor de la serie. Por su parte, en el caso MAR, la ausencia puede depender de información observable, incluyendo el tiempo o patrones de la serie.
+En el contexto de series temporales univariadas, los mecanismos MCAR y MAR pueden presentar algunas similitudes desde el punto de vista de la imputación, dado que en ambos casos los métodos pueden aprovechar la información observada y la estructura temporal de la serie para estimar los valores faltantes. Sin embargo, ambos mecanismos difieren en el proceso que genera la ausencia: bajo MCAR, la probabilidad de que una observación esté ausente no depende de los datos, mientras que bajo MAR puede depender de información observada, como el tiempo o valores previos de la serie.
 
 Por otro lado, en el caso de datos faltantes que no faltan al azar (MNAR), la probabilidad de que falte una observación puede depender del momento en que se encuentra esa observación en la serie, así como del valor de la propia observación.
 
@@ -604,7 +606,7 @@ Una vez ajustado el modelo a la serie observada, los pronósticos se obtienen de
 
 Es importante destacar que estos modelos requieren series completas para su estimación. Por este motivo, las observaciones faltantes son reemplazadas previamente mediante los distintos métodos de imputación considerados en este trabajo. Una vez completada la serie, el modelo se ajusta sobre los datos imputados y se generan pronósticos para los distintos horizontes de predicción analizados.
 
-La especificación del modelo se realiza de forma automática mediante el procedimiento implementado en la función `auto.arima` del paquete `forecast` de R. Este algoritmo selecciona los órdenes autorregresivos, de diferenciación y de media móvil que optimizan determinados criterios de información, considerando además la posible presencia de componentes estacionales.
+La especificación del modelo se realiza de forma automática mediante el procedimiento implementado en la función `auto.arima()` del paquete `forecast` de R. Este algoritmo selecciona los órdenes autorregresivos, de diferenciación y de media móvil que optimizan determinados criterios de información, considerando además la posible presencia de componentes estacionales.
 
 ### Modelo ETS
 
@@ -614,7 +616,7 @@ La principal característica de este enfoque es que permite representar explíci
 
 A diferencia de los modelos ARIMA, que describen la dependencia temporal a través de relaciones entre observaciones y errores pasados, los modelos ETS se basan en la descomposición de la serie en componentes no observados que evolucionan a lo largo del tiempo. Esta formulación permite modelar de manera flexible la tendencia y la estacionalidad, actualizando continuamente sus estimaciones a medida que se incorporan nuevas observaciones.
 
-La especificación del modelo se realiza utilizando la función `ets` del paquete `forecast` de R, la cual eval evalúa distintas combinaciones de componentes de error, tendencia y estacionalidad, seleccionando aquella que optimiza un criterio de información, generalmente el Criterio de Información de Akaike (AIC). Este procedimiento permite identificar de forma automática la estructura que mejor representa el comportamiento de la serie temporal entre un conjunto de modelos candidatos.
+La especificación del modelo se realiza utilizando la función `ets()` del paquete `forecast` de R, la cual evalúa distintas combinaciones de componentes de error, tendencia y estacionalidad, seleccionando aquella que optimiza un criterio de información, generalmente el Criterio de Información de Akaike (AIC). Este procedimiento permite identificar de forma automática la estructura que mejor representa el comportamiento de la serie temporal entre un conjunto de modelos candidatos.
 
 Al igual que los modelos ARIMA y SARIMA, requieren series completas para su estimación, por lo que los datos faltantes son imputados previamente mediante las técnicas consideradas en el estudio. 
 
@@ -643,7 +645,7 @@ Se plantea el modelo como uno de regresión aditiva, el cual puede descomponerse
 
 Ajustando el componente de tendencia de forma más flexible, se modela la estacionalidad con mayor precisión y, como resultado, se obtiene un pronóstico más exacto. Para este método se prefieren modelos de regresión muy flexibles en lugar de un modelo de series temporales tradicional, ya que brinda mayor flexibilidad de modelado, facilita el ajuste del modelo y maneja mejor los datos faltantes o los valores atípicos.
 
-Es importante destacar que este modelo, a diferencia de los modelos ARIMA, SARIMA y ETS, permite realizar los pronósticos con una serie incompleta. Por lo tanto, no es necesario imputar valores antes de elaborar los pronósticos. 
+A diferencia de los modelos ARIMA/SARIMA y ETS, que en este trabajo se ajustan sobre las series previamente completadas mediante los distintos métodos de imputación, Prophet se utiliza directamente sobre la serie con valores faltantes. Por este motivo, su inclusión no corresponde a una estrategia de *forecast-after-imputation*, sino que se incorpora como un modelo de referencia o *benchmark* que permite comparar el desempeño de los enfoques basados en imputación previa con una alternativa que admite observaciones ausentes sin necesidad de completar previamente la serie.
 
 ## Evaluación del desempeño
 
@@ -667,27 +669,33 @@ En este contexto, el error se define como la diferencia entre un valor observado
 
 * Error absoluto medio (MAE): Esta métrica es una medida de la diferencia entre dos valores, es decir, permite saber que tan diferente es el valor predicho y el valor real u observado. Para que un error con valor positivo no cancele a un error con error negativo se usa el valor absoluto de la diferencia. Como interesa conocer el comportamiento del error de todas las observaciones y no solamente de una, entonces se obtiene el promedio de los valores absolutos de la diferencia.
 
-$$MAE = \frac{\sum_{t=1}^{n} |\hat{y}_t - y_t|}{n_m}$$
+\begin{equation}
+MAE = \frac{\sum_{t=1}^{n} |\hat{y}_t - y_t|}{n_m}
+\end{equation}
 
 * Error medio cuadrado (MSE)
 Esta métrica es muy útil para saber que tan cerca es la línea de ajuste de la regresión a las observaciones. Al igual que en caso anterior se evita que un error con valor positivo anule a uno con valor negativo, pero en lugar de usar el valor absoluto, se eleva al cuadrado la diferencia.
 Siempre da un valor positivo y entre más cercano sea a cero es mejor.
 
-$$MSE = \frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}$$
-
+\begin{equation}
+MSE = \frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}
+\end{equation}
 * Raíz del error medio cuadrado (RMSE)
 Como la métrica anterior da el resultado en unidades cuadradas, para poder interpretarlo más fácilmente se saca la raíz cuadrada y de esta manera se obtiene el valor en las unidades originales.
 
-$$RMSE = \sqrt\frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}$$
-
+\begin{equation}
+RMSE = \sqrt\frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}
+\end{equation}
 * Porcentaje de error medio absoluto (MAPE)
 Esta es una métrica de la precisión, pero se presenta como si fuera un porcentaje, como ventaja tiene que es independiente de la escala y fácil de interpretar. Como desventaja es que puede producir valores no definidos, infinito o muy cercanos a cero.
 El calculo es sencillo, para cada observación se obtiene su porcentaje de error y luego se calcula la media de todos esos valores.
 
-$$MAPE = \frac{100}{n_m}\sum_{t=1}^{n}\left| \frac{y_t - \hat{y}_t}{y_t} \right|$$
+\begin{equation}
+MAPE = \frac{100}{n_m}\sum_{t=1}^{n}\left| \frac{y_t - \hat{y}_t}{y_t} \right|
+\end{equation}
 siendo $y_t$ el valor observado, $\hat{y_t}$ el valor imputado o pronosticado y $n_m$ la cantidad de valores perdidos o pronosticados.
 
-
+\newpage
 # Aplicación
 
 Con el objetivo de evaluar el impacto de distintos métodos de imputación sobre el desempeño de modelos de pronóstico en series temporales univariadas, se plantea un procedimiento experimental basado en la introducción controlada de datos faltantes en series originalmente completas. Esta estrategia permite conocer en todo momento los valores reales de las observaciones eliminadas y, en consecuencia, evaluar la calidad de las imputaciones realizadas y su efecto sobre la precisión de los pronósticos. Al introducir los valores faltantes, no se consideraron los extremos de la serie, dado que su imputación requeriría extrapolar a partir de las observaciones disponibles, en lugar de interpolar utilizando información a ambos lados del valor faltante.
@@ -700,7 +708,7 @@ Una vez generados los escenarios de datos faltantes, se aplican los diferentes m
 
 La calidad de las imputaciones se evalúa comparando los valores imputados con las observaciones originales eliminadas artificialmente. Para cuantificar la precisión de cada método se utilizan las métricas RMSE, MAE y MAPE, anteriormente definidas.
 
-Luego, utilizando las series imputadas, se ajustan los modelos de pronóstico ARIMA/SARIMA y ETS, mientras que el modelo prophet se ajusta usando la serie con valores faltantes. Los pronósticos se generan para horizontes de $h=3, 6\text{ y }12$ períodos hacia adelante. Finalmente, el desempeño predictivo de cada modelo se evalúa comparando los valores pronosticados con las observaciones reales del conjunto de prueba mediante las mismas métricas de error utilizadas para evaluar la imputación. Esto permite analizar no solo la capacidad de cada método para reconstruir los valores faltantes, sino también el impacto que dichas imputaciones tienen sobre la precisión de los pronósticos posteriores. El ajuste de los modelos ARIMA/SARIMA y ETS se hace mediante la función `auto.arima` del paquete `forecast` de R. Esta función realiza una búsqueda entre distintas especificaciones del modelo y selecciona aquella que optimiza un criterio de información. Además, permite considerar automáticamente la necesidad de diferenciación no estacional y estacional, así como la inclusión de componentes autorregresivos y de media móvil, tanto estacionales como no estacionales.
+Luego, utilizando las series imputadas, se ajustan los modelos de pronóstico ARIMA/SARIMA y ETS, siguiendo el enfoque forecast-after-imputation. Adicionalmente, se ajusta Prophet directamente sobre la serie con valores faltantes, sin aplicar imputación previa. De este modo, Prophet se incorpora como un *benchmark* externo al esquema *forecast-after-imputation*, permitiendo comparar la estrategia de imputar y luego pronosticar con una alternativa que puede generar predicciones a partir de series incompletas. Los pronósticos se generan para horizontes de $h=3, 6\text{ y }12$ períodos hacia adelante. Finalmente, el desempeño predictivo de cada modelo se evalúa comparando los valores pronosticados con las observaciones reales del conjunto de prueba mediante las mismas métricas de error utilizadas para evaluar la imputación. Esto permite analizar no solo la capacidad de cada método para reconstruir los valores faltantes, sino también el impacto que dichas imputaciones tienen sobre la precisión de los pronósticos posteriores. El ajuste de los modelos ARIMA/SARIMA se realiza mediante la función `auto.arima()`, mientras que para los modelos ETS se utiliza la función `ets()`, ambas pertenecientes al paquete `forecast` de R. Estas funciones permiten seleccionar automáticamente una especificación del modelo a partir de un conjunto de alternativas, utilizando un criterio de información para determinar la más adecuada. En el caso de `auto.arima()`, la búsqueda considera distintos órdenes autorregresivos y de media móvil, tanto estacionales como no estacionales, así como la necesidad de aplicar diferenciación estacional y no estacional. Por su parte, `ets()` selecciona automáticamente la combinación de componentes de error, tendencia y estacionalidad que mejor se ajusta a los datos, contemplando distintas estructuras dentro de la familia de modelos de suavizamiento exponencial.
 
 El procedimiento completo puede resumirse en las siguientes etapas:
 
@@ -744,11 +752,11 @@ serie_test <- window(serie, start = c(2025, 1))
 #serie_test tiene observaciones que se guardan para luego evaluar pronosticos
 ```
 
-En este trabajo se utilizó una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación Argentina. La serie comprende observaciones mensuales desde enero de 2010 hasta diciembre de 2025, con un total de 300 observaciones, expresadas en miles de GWh.
+En este trabajo se utilizó una serie temporal mensual de la demanda de electricidad en Argentina, cuya fuente primaria son los registros de CAMMESA y de la Secretaría de Energía de la Nación Argentina. La serie comprende observaciones mensuales desde enero de 2010 hasta diciembre de 2025, con un total de 192 observaciones, expresadas en miles de GWh.
 
 ## Análisis descriptivo
 
-Se realizó una partición de la serie temporal en dos subconjuntos. Las observaciones comprendidas entre enero de 2010 y diciembre de 2024 conforman el conjunto de entrenamiento, utilizado para la especificación y ajuste del modelo. Por su parte, los datos de 2025 se reservaron como conjunto de prueba para evaluar la capacidad predictiva del modelo seleccionado sobre datos no utilizados en su estimación.
+Se realizó una partición de la serie temporal en dos subconjuntos. Las observaciones comprendidas entre enero de 2010 y diciembre de 2024 conformaron el conjunto de entrenamiento, sobre el cual se generaron los escenarios de datos faltantes, se aplicaron los métodos de imputación y se ajustaron los modelos de pronóstico. Las observaciones correspondientes a 2025 se reservaron como conjunto de prueba y se utilizaron exclusivamente para evaluar el desempeño predictivo fuera de muestra.
 
 Como primera etapa, se realizó un análisis exploratorio de la serie con el objetivo de identificar sus principales características y evaluar los patrones que podrían resultar relevantes para el proceso de imputación y pronóstico. En primer lugar, se analizó gráficamente la evolución temporal de la serie, presentada en la @fig-grafico1
 
@@ -783,12 +791,12 @@ ggplot() +
   )
 ```
 
-La @fig-grafico1 muestra una tendencia creciente de la demanda a lo largo del período analizado, aunque dicha evolución no es estrictamente lineal. Este comportamiento sugiere la ausencia de estacionariedad en media de la serie. Además, se analizaron la Función de Autocorrelación Muestral (ACFM) y la Función de Autocorrelación Parcial Muestral (PACFM), las cuales se presentan en la @fig-grafico2 y @fig-grafico3, respectivamente.
+La @fig-grafico1 muestra una tendencia general creciente de la demanda durante el período analizado, aunque con cambios en su evolución a lo largo del tiempo. Asimismo, se observa un patrón de fluctuaciones recurrentes compatible con una componente estacional y algunos movimientos de magnitud inusual, particularmente alrededor de 2020. Estas características sugieren que la serie no presenta un comportamiento estacionario en media y justifican un análisis más detallado de su estructura de dependencia temporal y estacionalidad.
 
 ```{r fig-grafico2, fig.cap= "Función de autocorrelación muestral", fig.height=3, fig.width=5.5}
 ggAcf(serie_train, lag.max = 96) + 
       scale_x_continuous(breaks = seq(0,96,6), labels = seq(0,96,6)) +
-      labs(title = NULL,x = "Rezago (meses)", y = "FAC") +
+      labs(title = NULL,x = "Rezago (meses)", y = "FACM") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "grey90", color = NA),
@@ -801,7 +809,7 @@ ggAcf(serie_train, lag.max = 96) +
 ```{r fig-grafico3, fig.cap= "Función de autocorrelación parcial muestral", fig.height=3, fig.width=5.5}
 ggPacf(serie_train, lag.max = 96) + 
       scale_x_continuous(breaks = seq(0,96,6), labels = seq(0,96,6)) +
-      labs(title = NULL,x = "Rezago (meses)", y = "FACP") +
+      labs(title = NULL,x = "Rezago (meses)", y = "FACPM") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "grey90", color = NA),
@@ -811,9 +819,9 @@ ggPacf(serie_train, lag.max = 96) +
 
 ```
 
-En la @fig-grafico2 se observa una autocorrelación que presenta un decaimiento lento, lo que resulta consistente con la presencia de una estructura temporal persistente. Asimismo, las autocorrelaciones positivas en los primeros rezagos indican una asociación entre la demanda de un mes y la correspondiente a meses inmediatamente anteriores.
+La función de autocorrelación muestral (@fig-grafico2) presenta valores elevados en los primeros rezagos y un decaimiento gradual, comportamiento consistente con la persistencia temporal observada en la serie. Asimismo, se identifica una estructura periódica en las autocorrelaciones, compatible con la presencia de estacionalidad anual.
 
-Por otro lado, en la @fig-grafico3 se observan autocorrelaciones parciales significativas en los primeros rezagos, lo que sugiere la presencia de dependencia de corto plazo.
+Por su parte, la función de autocorrelación parcial muestral (@fig-grafico3) muestra asociaciones significativas principalmente en los primeros rezagos, lo que evidencia dependencia temporal de corto plazo. En conjunto, ambas funciones confirman la existencia de una estructura de dependencia temporal que deberá ser considerada tanto en la imputación como en el posterior modelado de la serie.
 
 En ambos gráficos se observan picos significativos en rezagos múltiplos de 12 meses, lo que sugiere la presencia de un patrón estacional anual.
 
@@ -821,7 +829,7 @@ Estas características de tendencia, estacionalidad y cambios estructurales resu
 
 En la @fig-grafico4 se presenta el comportamiento estacional de la serie por año y mes.
 
-```{r fig-grafico4, fig.cap= "Distribución anual de la demanda mensual de electricidad en Argentina", fig.height=3, fig.width=5.5}
+```{r fig-grafico4, fig.cap= "Distribución de la demanda mensual de energía eléctrica según año, Argentina, 2010–2024.", fig.height=3, fig.width=5.5}
 demanda_filtrada <- subset(datos, 2010 <= anio & anio < 2025)
 ggplot(demanda_filtrada, aes(x = factor(anio), y = demanda)) +
   geom_boxplot(fill = "slateblue4", alpha = 0.7) +
@@ -898,13 +906,16 @@ ggmonthplot(serie_train)+
   )
 ```
 
-La @fig-grafico6 evidencia la presencia de un componente estacional anual en la demanda eléctrica. Se observan picos en los meses de marzo y enero, asociados a olas de calor, y valores mínimos en abril. Las medias mensuales confirman un patrón recurrente de consumo que se repite año tras año.
+La @fig-grafico6 confirma la presencia de un patrón estacional anual. Los mayores niveles medios de demanda se observan principalmente durante los meses de verano, mientras que abril presenta uno de los niveles más bajos. Este comportamiento evidencia que el nivel esperado de la serie varía sistemáticamente según el mes del año.
 
 ## Resultados
 
 ### Datos faltantes completamente al azar (MCAR)
 
-```{r tabla1, results='asis'}
+```{r tabla1}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MCAR con 10% de datos faltantes."
+#| tbl-pos: "H"
+
 tabla <- readRDS("Resultados/MCAR/resultados_MCAR_10_ARIMA_h3.rds")
 
 tabla <- tabla %>%
@@ -929,7 +940,6 @@ tabla %>%
     align = "lccc",
     booktabs = TRUE,
     linesep = "",
-    caption = "Errores de imputación (Escenario 10\\% MCAR)",
     col.names = c("Método", "RMSE", "MAE", "MAPE")
   ) %>%
   kable_styling(
@@ -937,10 +947,13 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "7cm") %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla2, results='asis'}
+```{r tabla2}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MCAR con 10% de datos faltantes."
+#| tbl-pos: "H"
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_10_ARIMA_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_10_ARIMA_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_10_ARIMA_h12.rds")
@@ -970,10 +983,9 @@ tabla %>%
   kable(
     format = "latex",
     escape = FALSE,
-    align = "lccccccccc",
+    align = c("l", rep("c", 9)), 
     booktabs = TRUE,
-    linesep = "",
-    caption = "10\\% MCAR, pronosticando con ARIMA",
+    linesep = "\\addlinespace",
     col.names = c(
       "Método",
       "RMSE", "MAE", "MAPE",
@@ -986,6 +998,7 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "5cm") %>%
   add_header_above(
     c(" " = 1,
       "h=3" = 3,
@@ -996,7 +1009,9 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla3, results='asis'}
+```{r tabla3}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MCAR con 10% de datos faltantes."
+#| tbl-pos: "H"
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_10_ETS_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_10_ETS_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_10_ETS_h12.rds")
@@ -1026,10 +1041,9 @@ tabla %>%
   kable(
     format = "latex",
     escape = FALSE,
-    align = "lccccccccc",
+    align = c("l", rep("c", 9)), 
     booktabs = TRUE,
-    linesep = "",
-    caption = "10\\% MCAR, pronosticando con ETS",
+    linesep = "\\addlinespace",
     col.names = c(
       "Método",
       "RMSE", "MAE", "MAPE",
@@ -1042,6 +1056,7 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "5cm") %>%
   add_header_above(
     c(" " = 1,
       "h=3" = 3,
@@ -1052,7 +1067,10 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla4, results='asis'}
+```{r tabla4}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MCAR con 10% de datos faltantes."
+#| tbl-pos: "H"
+
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_10_PROPHET_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_10_PROPHET_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_10_PROPHET_h12.rds")
@@ -1080,7 +1098,6 @@ tabla %>%
     escape = FALSE,
     align = "lccccccccc",
     booktabs = TRUE,
-    caption = "10\\% MCAR, pronosticando con Prophet",
     col.names = c(
       "Modelo",
       "RMSE", "MAE", "MAPE",
@@ -1091,15 +1108,19 @@ tabla %>%
   kable_styling(
     full_width = FALSE,
     position = "center",
-    latex_options = c("scale_down", "HOLD_position")
+    latex_options = c("HOLD_position")
   ) %>%
   add_header_above(
     c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
     bold = TRUE
-  )
+  ) %>%
+  row_spec(0, bold = TRUE)
 ```
 
-```{r tabla5, results='asis'}
+```{r tabla5}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MCAR con 25% de datos faltantes."
+#| tbl-pos: "H"
+
 tabla <- readRDS("Resultados/MCAR/resultados_MCAR_25_ARIMA_h3.rds")
 
 tabla <- tabla %>%
@@ -1124,7 +1145,6 @@ tabla %>%
     align = "lccc",
     booktabs = TRUE,
     linesep = "",
-    caption = "Errores de imputación (Escenario 25\\% MCAR)",
     col.names = c("Método", "RMSE", "MAE", "MAPE")
   ) %>%
   kable_styling(
@@ -1132,10 +1152,13 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "7cm") %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla6, results='asis'}
+```{r tabla6}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MCAR con 25% de datos faltantes."
+#| tbl-pos: "H"
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_25_ARIMA_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_25_ARIMA_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_25_ARIMA_h12.rds")
@@ -1165,10 +1188,9 @@ tabla %>%
   kable(
     format = "latex",
     escape = FALSE,
-    align = "lccccccccc",
+    align = c("l", rep("c", 9)), 
     booktabs = TRUE,
-    linesep = "",
-    caption = "25\\% MCAR, pronosticando con ARIMA",
+    linesep = "\\addlinespace",
     col.names = c(
       "Método",
       "RMSE", "MAE", "MAPE",
@@ -1181,6 +1203,7 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "5cm") %>%
   add_header_above(
     c(" " = 1,
       "h=3" = 3,
@@ -1191,7 +1214,9 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla7, results='asis'}
+```{r tabla7}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MCAR con 25% de datos faltantes."
+#| tbl-pos: "H"
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_25_ETS_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_25_ETS_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_25_ETS_h12.rds")
@@ -1221,10 +1246,9 @@ tabla %>%
   kable(
     format = "latex",
     escape = FALSE,
-    align = "lccccccccc",
+    align = c("l", rep("c", 9)), 
     booktabs = TRUE,
-    linesep = "",
-    caption = "25\\% MCAR, pronosticando con ETS",
+    linesep = "\\addlinespace",
     col.names = c(
       "Método",
       "RMSE", "MAE", "MAPE",
@@ -1237,6 +1261,7 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "5cm") %>%
   add_header_above(
     c(" " = 1,
       "h=3" = 3,
@@ -1247,7 +1272,10 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla8, results='asis'}
+```{r tabla8}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MCAR con 25% de datos faltantes."
+#| tbl-pos: "H"
+
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_25_PROPHET_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_25_PROPHET_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_25_PROPHET_h12.rds")
@@ -1275,7 +1303,6 @@ tabla %>%
     escape = FALSE,
     align = "lccccccccc",
     booktabs = TRUE,
-    caption = "25\\% MCAR, pronosticando con Prophet",
     col.names = c(
       "Modelo",
       "RMSE", "MAE", "MAPE",
@@ -1286,15 +1313,19 @@ tabla %>%
   kable_styling(
     full_width = FALSE,
     position = "center",
-    latex_options = c("scale_down", "HOLD_position")
+    latex_options = c("HOLD_position")
   ) %>%
   add_header_above(
     c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
     bold = TRUE
-  )
+  ) %>%
+  row_spec(0, bold = TRUE)
 ```
 
-```{r tabla9, results='asis'}
+```{r tabla9}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MCAR con 40% de datos faltantes."
+#| tbl-pos: "H"
+
 tabla <- readRDS("Resultados/MCAR/resultados_MCAR_40_ARIMA_h3.rds")
 
 tabla <- tabla %>%
@@ -1319,7 +1350,6 @@ tabla %>%
     align = "lccc",
     booktabs = TRUE,
     linesep = "",
-    caption = "Errores de imputación (Escenario 40\\% MCAR)",
     col.names = c("Método", "RMSE", "MAE", "MAPE")
   ) %>%
   kable_styling(
@@ -1327,10 +1357,13 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "7cm") %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla10, results='asis'}
+```{r tabla10}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MCAR con 40% de datos faltantes."
+#| tbl-pos: "H"
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_40_ARIMA_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_40_ARIMA_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_40_ARIMA_h12.rds")
@@ -1360,10 +1393,9 @@ tabla %>%
   kable(
     format = "latex",
     escape = FALSE,
-    align = "lccccccccc",
+    align = c("l", rep("c", 9)), 
     booktabs = TRUE,
-    linesep = "",
-    caption = "40\\% MCAR, pronosticando con ARIMA",
+    linesep = "\\addlinespace",
     col.names = c(
       "Método",
       "RMSE", "MAE", "MAPE",
@@ -1376,6 +1408,7 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "5cm") %>%
   add_header_above(
     c(" " = 1,
       "h=3" = 3,
@@ -1386,7 +1419,9 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla11, results='asis'}
+```{r tabla11}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MCAR con 40% de datos faltantes."
+#| tbl-pos: "H"
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_40_ETS_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_40_ETS_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_40_ETS_h12.rds")
@@ -1416,10 +1451,9 @@ tabla %>%
   kable(
     format = "latex",
     escape = FALSE,
-    align = "lccccccccc",
+    align = c("l", rep("c", 9)), 
     booktabs = TRUE,
-    linesep = "",
-    caption = "40\\% MCAR, pronosticando con ETS",
+    linesep = "\\addlinespace",
     col.names = c(
       "Método",
       "RMSE", "MAE", "MAPE",
@@ -1432,6 +1466,7 @@ tabla %>%
     position = "center",
     latex_options = c("scale_down", "HOLD_position")
   ) %>%
+  column_spec(1, width = "5cm") %>%
   add_header_above(
     c(" " = 1,
       "h=3" = 3,
@@ -1442,7 +1477,10 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla12, results='asis'}
+```{r tabla12}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MCAR con 40% de datos faltantes."
+#| tbl-pos: "H"
+
 h3  <- readRDS("Resultados/MCAR/resultados_MCAR_40_PROPHET_h3.rds")
 h6  <- readRDS("Resultados/MCAR/resultados_MCAR_40_PROPHET_h6.rds")
 h12 <- readRDS("Resultados/MCAR/resultados_MCAR_40_PROPHET_h12.rds")
@@ -1470,7 +1508,6 @@ tabla %>%
     escape = FALSE,
     align = "lccccccccc",
     booktabs = TRUE,
-    caption = "40\\% MCAR, pronosticando con Prophet",
     col.names = c(
       "Modelo",
       "RMSE", "MAE", "MAPE",
@@ -1481,13 +1518,634 @@ tabla %>%
   kable_styling(
     full_width = FALSE,
     position = "center",
-    latex_options = c("scale_down", "HOLD_position")
+    latex_options = c("HOLD_position")
   ) %>%
   add_header_above(
     c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
     bold = TRUE
-  )
+  ) %>%
+  row_spec(0, bold = TRUE)
 ```
+
+### Datos faltantes completamente al azar en bloques (MCAR en bloques)
+
+```{r tabla13}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MCAR en bloques con 10% de datos faltantes."
+#| tbl-pos: "H"
+
+tabla <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "7cm") %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla14}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MCAR en bloques con 10% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla15}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MCAR en bloques con 10% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_ETS_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_ETS_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla16}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MCAR en bloques con 10% de datos faltantes."
+#| tbl-pos: "H"
+
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_10_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla17}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MCAR en bloques con 25% de datos faltantes."
+#| tbl-pos: "H"
+
+tabla <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "7cm") %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla18}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MCAR en bloques con 25% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla19}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MCAR en bloques con 25% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_ETS_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_ETS_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla20}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MCAR en bloques con 25% de datos faltantes."
+#| tbl-pos: "H"
+
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_25_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla21}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MCAR en bloques con 40% de datos faltantes."
+#| tbl-pos: "H"
+
+tabla <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "7cm") %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla22}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MCAR en bloques con 40% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla23}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MCAR en bloques con 40% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_ETS_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_ETS_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla24}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MCAR en bloques con 40% de datos faltantes."
+#| tbl-pos: "H"
+
+h3  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MCAR_bloques/resultados_MCAR_bloques_40_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+
+## Comparación entre mecanismos MCAR, MAR y MNAR
 
 \newpage
 
