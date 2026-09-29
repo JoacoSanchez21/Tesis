@@ -73,16 +73,18 @@ introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
 
 #-------------------------------------------------------------------------------
 # En picos
-introducir_picos <- function(y, percentil = 0.8, prop = 0.5) {
+introducir_picos <- function(y, percentil = 0.8, prop = 0.1) {
   y_na <- y
+  n <- length(y)
   umbral <- quantile(y, percentil, na.rm = TRUE)
   candidatos <- which(
     y > umbral &
-      seq_along(y) > tam_max &
-      seq_along(y) <= n - tam_max
+      seq_along(y) > 2 &
+      seq_along(y) <= n - 2
   )
+  n_eliminar <- floor(prop * length(candidatos))
   idx <- sample(candidatos, n_eliminar)
-    y_na[idx] <- NA
+  y_na[idx] <- NA
   return(y_na)
 }
 
@@ -121,23 +123,23 @@ metricas_pronostico <- function(pronostico, serie_test) {
 
 # 4) Imputadores
 imputadores <- list(
-  random      = function(x) na_random(x),
-  replace     = function(x) na_replace(x),
-  mean        = function(x) na_mean(x, option = "mean"),
-  median      = function(x) na_mean(x, option = "median"),
-  mode        = function(x) na_mean(x, option = "mode"),
-  ilinear     = function(x) na_interpolation(x, option = "linear"),
-  ispline     = function(x) na_interpolation(x, option = "spline"),
-  istine      = function(x) na_interpolation(x, option = "stine"),
-  masimple    = function(x) na_ma(x, weighting = "simple"),
-  malinear    = function(x) na_ma(x, weighting = "linear"),
-  maexp       = function(x) na_ma(x, weighting = "exponential"),
-  locf        = function(x) na_locf(x, option = "locf"),
-  nocb        = function(x) na_locf(x, option = "nocb"),
-  seadec      = function(x) na_seadec(x, algorithm = "interpolation"),
-  seasplit    = function(x) na_seasplit(x),
-  kalmans     = function(x) na_kalman(x, model = "StructTS"),
-  kalmana     = function(x) na_kalman(x, model = "auto.arima")
+  `Valor aleatorio`                              = function(x) na_random(x),
+  `Valor definido`                               = function(x) na_replace(x),
+  `Valor medio`                                  = function(x) na_mean(x, option = "mean"),
+  `Valor mediano`                                = function(x) na_mean(x, option = "median"),
+  `Valor modal`                                  = function(x) na_mean(x, option = "mode"),
+  `Interpolación lineal`                         = function(x) na_interpolation(x, option = "linear"),
+  `Interpolación spline`                         = function(x) na_interpolation(x, option = "spline"),
+  `Interpolación de Stineman`                    = function(x) na_interpolation(x, option = "stine"),
+  `Media móvil simple`                           = function(x) na_ma(x, weighting = "simple"),
+  `Media móvil lineal ponderada`                 = function(x) na_ma(x, weighting = "linear"),
+  `Media móvil ponderada exponencial`            = function(x) na_ma(x, weighting = "exponential"),
+  `Última observación trasladada hacia adelante` = function(x) na_locf(x, option = "locf"),
+  `Siguiente observación trasladada hacia atrás` = function(x) na_locf(x, option = "nocb"),
+  `Descomposición estacional`                    = function(x) na_seadec(x, algorithm = "interpolation"),
+  `División estacional`                          = function(x) na_seasplit(x),
+  `Suavizado de Kalman en un modelo estructural` = function(x) na_kalman(x, model = "StructTS"),
+  `Representación del espacio en estados de ARIMA y suavizado de Kalman` = function(x) na_kalman(x, model = "auto.arima")
 )
 
 # 5) Función principal
@@ -221,4 +223,54 @@ errores_prophet <- function(serie_train_NA, serie_test, h){
     MAE  = mae_val,
     MAPE = mape_val
   ))
+}
+
+#-------------------------------------------------------------------------------
+
+ejecutar_simulacion <- function(serie_train, serie_test, mecanismo_na, prop, h, modelo, n_iteraciones = 100, resultado) {
+  
+  resultados_acum <- NULL
+  iteraciones_exitosas <- 0
+  
+  cat("\nIniciando simulación:", resultado, "\n")
+  
+  for (i in 1:n_iteraciones) {
+    if (i %% 10 == 0) cat("Iteración", i, "de", n_iteraciones, "...\n")
+    
+    serie_train_NA <- mecanismo_na(serie_train, prop = prop)
+    indices_borrados <- which(is.na(serie_train_NA))
+    
+    res <- tryCatch({
+      errores(
+        serie_train, 
+        serie_train_NA, 
+        indices_borrados, 
+        h = h, 
+        serie_test,
+        pronostico = modelo
+      )
+    }, error = function(e) {
+      message("\n[!] Error en iteración ", i, " saltando. Detalle: ", e$message)
+      return(NULL)
+    })
+    
+    if (!is.null(res)) {
+      iteraciones_exitosas <- iteraciones_exitosas + 1
+      if (is.null(resultados_acum)) {
+        resultados_acum <- res
+      } else {
+        resultados_acum[, -1] <- as.matrix(resultados_acum[, -1]) + as.matrix(res[, -1])
+      }
+    }
+  }
+  
+  if (iteraciones_exitosas > 0) {
+    resultados_finales <- resultados_acum
+    resultados_finales[, -1] <- resultados_finales[, -1] / iteraciones_exitosas
+    saveRDS(resultados_finales, file = resultado)
+    cat("Completado. Guardado en:", resultado, "(", iteraciones_exitosas, "iteraciones exitosas)\n")
+    return(resultados_finales)
+  } else {
+    stop("Todas las iteraciones fallaron.")
+  }
 }
