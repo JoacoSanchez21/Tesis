@@ -30,13 +30,13 @@ datos <- read_csv("demanda.csv", show_col_types = FALSE) %>%
          demanda = demanda/1000)
 vals <- datos$demanda
 
-ts <- ts(vals, 
+serie_completa <- ts(vals, 
          start = c(2001, 1), 
          frequency = 12)
 
-serie <- window(ts, end = c(2024, 12))
+serie <- window(serie_completa, end = c(2024, 12))
 serie_train <- window(serie,start=c(2010,1), end = c(2024, 12))
-serie_test <- window(ts, start = c(2025, 1)) 
+serie_test <- window(serie_completa, start = c(2025, 1)) 
 
 
 #-------------------------------------------------------------------------------
@@ -44,18 +44,18 @@ serie_test <- window(ts, start = c(2025, 1))
 introducir_NA <- function(y, prop = 0.1) {
   y_na <- y
   n <- length(y)
-  idx <- sample(2:(n - 1), size = floor(prop * n))
+  idx <- sample(2:(n - 1), size = round(prop * n))
   y_na[idx] <- NA
   return(y_na)
 }
 
 #-------------------------------------------------------------------------------
-#En bloques
+# En bloques
 
 introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
   y_na <- y
   n <- length(y)
-  total_na <- ceiling(prop * n)
+  total_na <- round(prop * n)
   na_actual <- 0
   while (na_actual < total_na) {
     tam_bloque <- sample(tam_min:tam_max, 1)
@@ -72,22 +72,31 @@ introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
 }
 
 #-------------------------------------------------------------------------------
-# En picos
-introducir_picos <- function(y, percentil = 0.8, prop = 0.1) {
+# MAR temporal: la probabilidad de que falte y_t depende del mes (siempre
+# observado) y NO del valor. Los meses "altos" pesan `razon` veces más.
+introducir_NA_MAR <- function(y, prop = 0.1, razon = 2, meses_altos) {
   y_na <- y
-  n <- length(y)
-  umbral <- quantile(y, percentil, na.rm = TRUE)
-  candidatos <- which(
-    y > umbral &
-      seq_along(y) > 2 &
-      seq_along(y) <= n - 2
-  )
-  n_eliminar <- floor(prop * length(candidatos))
-  idx <- sample(candidatos, n_eliminar)
+  n    <- length(y)
+  int  <- 2:(n - 1)
+  mes  <- as.integer(cycle(y))
+  w    <- ifelse(mes[int] %in% meses_altos, razon, 1)
+  idx  <- sample(int, size = floor(prop * n), prob = w)
   y_na[idx] <- NA
   return(y_na)
 }
 
+#-------------------------------------------------------------------------------
+# MNAR
+# beta controla la intensidad (0 = MCAR).
+introducir_NA_MNAR <- function(y, prop = 0.1, beta = 1) {
+  y_na <- y
+  n    <- length(y)
+  int  <- 2:(n - 1)
+  z    <- as.numeric(scale(as.numeric(y)))[int]
+  idx  <- sample(int, size = floor(prop * n), prob = exp(beta * z))
+  y_na[idx] <- NA
+  return(y_na)
+}
 
 #-------------------------------------------------------------------------------
 # MEDIDAS DEL ERROR
@@ -227,7 +236,10 @@ errores_prophet <- function(serie_train_NA, serie_test, h){
 
 #-------------------------------------------------------------------------------
 
-ejecutar_simulacion <- function(serie_train, serie_test, mecanismo_na, prop, h, modelo, n_iteraciones = 100, resultado) {
+ejecutar_simulacion <- function(
+    serie_train, serie_test, mecanismo_na, prop, h, modelo,
+    n_iteraciones = 100, resultado, ...
+) {
   
   resultados_acum <- NULL
   iteraciones_exitosas <- 0
@@ -235,41 +247,64 @@ ejecutar_simulacion <- function(serie_train, serie_test, mecanismo_na, prop, h, 
   cat("\nIniciando simulación:", resultado, "\n")
   
   for (i in 1:n_iteraciones) {
-    if (i %% 10 == 0) cat("Iteración", i, "de", n_iteraciones, "...\n")
+    if (i %% 10 == 0) {
+      cat("Iteración", i, "de", n_iteraciones, "...\n")
+    }
     
-    serie_train_NA <- mecanismo_na(serie_train, prop = prop)
+    serie_train_NA <- mecanismo_na(
+      serie_train,
+      prop = prop,
+      ...
+    )
+    
     indices_borrados <- which(is.na(serie_train_NA))
     
     res <- tryCatch({
       errores(
-        serie_train, 
-        serie_train_NA, 
-        indices_borrados, 
-        h = h, 
+        serie_train,
+        serie_train_NA,
+        indices_borrados,
+        h = h,
         serie_test,
         pronostico = modelo
       )
     }, error = function(e) {
-      message("\n[!] Error en iteración ", i, " saltando. Detalle: ", e$message)
+      message(
+        "\n[!] Error en iteración ", i,
+        " saltando. Detalle: ", e$message
+      )
       return(NULL)
     })
     
     if (!is.null(res)) {
       iteraciones_exitosas <- iteraciones_exitosas + 1
+      
       if (is.null(resultados_acum)) {
         resultados_acum <- res
       } else {
-        resultados_acum[, -1] <- as.matrix(resultados_acum[, -1]) + as.matrix(res[, -1])
+        resultados_acum[, -1] <-
+          as.matrix(resultados_acum[, -1]) +
+          as.matrix(res[, -1])
       }
     }
   }
   
   if (iteraciones_exitosas > 0) {
     resultados_finales <- resultados_acum
-    resultados_finales[, -1] <- resultados_finales[, -1] / iteraciones_exitosas
+    
+    resultados_finales[, -1] <-
+      resultados_finales[, -1] / iteraciones_exitosas
+    
     saveRDS(resultados_finales, file = resultado)
-    cat("Completado. Guardado en:", resultado, "(", iteraciones_exitosas, "iteraciones exitosas)\n")
+    
+    cat(
+      "Completado. Guardado en:", resultado,
+      "(", iteraciones_exitosas,
+      "iteraciones exitosas)\n"
+    )
+    
     return(resultados_finales)
+    
   } else {
     stop("Todas las iteraciones fallaron.")
   }
