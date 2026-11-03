@@ -309,3 +309,186 @@ ejecutar_simulacion <- function(
     stop("Todas las iteraciones fallaron.")
   }
 }
+
+#-------------------------------------------------------------------------------
+ejecutar_pronosticos <- function(
+    serie_train,
+    serie_test,
+    modelos = c("ARIMA", "ETS", "PROPHET"),
+    horizontes = c(3, 6, 12),
+    archivo = "Resultados/evaluacion_pronosticos.rds"
+) {
+  
+  if (!is.ts(serie_train) || !is.ts(serie_test)) {
+    stop("Las series deben ser objetos ts.")
+  }
+  
+  if (frequency(serie_train) != 12 ||
+      frequency(serie_test) != 12) {
+    stop("Las series deben tener frecuencia mensual.")
+  }
+  
+  if (NCOL(serie_train) != 1 || NCOL(serie_test) != 1) {
+    stop("Las series deben ser univariadas.")
+  }
+  
+  if (anyNA(serie_train) || anyNA(serie_test)) {
+    stop("Las series no deben contener valores faltantes.")
+  }
+  
+  indice_fin_train <- start(serie_train)[1] * 12 +
+    start(serie_train)[2] - 1 + length(serie_train) - 1
+  
+  indice_inicio_test <- start(serie_test)[1] * 12 +
+    start(serie_test)[2] - 1
+  
+  if (indice_inicio_test != indice_fin_train + 1) {
+    stop("serie_test debe comenzar inmediatamente después de serie_train.")
+  }
+  
+  horizontes <- sort(unique(as.integer(horizontes)))
+  
+  if (length(horizontes) == 0 ||
+      anyNA(horizontes) ||
+      any(horizontes < 1)) {
+    stop("Los horizontes deben ser enteros positivos.")
+  }
+  
+  h_max <- max(horizontes)
+  
+  if (length(serie_test) < h_max) {
+    stop("serie_test no tiene suficientes observaciones para el horizonte máximo.")
+  }
+  
+  modelos <- match.arg(
+    modelos,
+    choices = c("ARIMA", "ETS", "PROPHET"),
+    several.ok = TRUE
+  )
+  
+  inicio_train <- start(serie_train)
+  
+  fecha_inicio_train <- as.Date(
+    sprintf("%04d-%02d-01",
+            inicio_train[1], inicio_train[2])
+  )
+  
+  fechas_train <- seq.Date(
+    from = fecha_inicio_train,
+    by = "month",
+    length.out = length(serie_train)
+  )
+  
+  inicio_test <- start(serie_test)
+  
+  fecha_inicio_test <- as.Date(
+    sprintf("%04d-%02d-01",
+            inicio_test[1], inicio_test[2])
+  )
+  
+  fechas_test <- seq.Date(
+    from = fecha_inicio_test,
+    by = "month",
+    length.out = h_max
+  )
+  
+  lista_metricas <- list()
+  lista_pronosticos <- list()
+  
+  for (modelo in modelos) {
+    
+    if (modelo == "ARIMA") {
+      
+      ajuste <- forecast::auto.arima(serie_train)
+      
+      fc <- forecast::forecast(
+        ajuste,
+        h = h_max
+      )
+      
+      pronosticos <- as.numeric(fc$mean)
+    }
+    
+    if (modelo == "ETS") {
+      
+      ajuste <- forecast::ets(serie_train)
+      
+      fc <- forecast::forecast(
+        ajuste,
+        h = h_max
+      )
+      
+      pronosticos <- as.numeric(fc$mean)
+    }
+    
+    if (modelo == "PROPHET") {
+      
+      datos_prophet <- data.frame(
+        ds = fechas_train,
+        y = as.numeric(serie_train)
+      )
+      
+      ajuste <- prophet::prophet(
+        df = datos_prophet,
+        seasonality.mode = "multiplicative",
+        yearly.seasonality = TRUE,
+        weekly.seasonality = FALSE,
+        daily.seasonality = FALSE
+      )
+      
+      futuro <- data.frame(ds = fechas_test)
+      
+      pred <- predict(ajuste, futuro)
+      
+      pronosticos <- as.numeric(pred$yhat)
+    }
+    
+    reales <- as.numeric(serie_test)[1:h_max]
+    
+    tabla_pronosticos <- data.frame(
+      Modelo = modelo,
+      Horizonte = 1:h_max,
+      Fecha = fechas_test,
+      Real = reales,
+      Pronostico = pronosticos,
+      Error = reales - pronosticos
+    )
+    
+    lista_pronosticos[[modelo]] <- tabla_pronosticos
+    
+    metricas <- do.call(
+      rbind,
+      lapply(horizontes, function(h) {
+        
+        error <- reales[1:h] - pronosticos[1:h]
+        
+        data.frame(
+          Modelo = modelo,
+          Horizonte = h,
+          RMSE = sqrt(mean(error^2)),
+          MAE = mean(abs(error)),
+          MAPE = mean(
+            abs(error) /
+              pmax(abs(reales[1:h]), 1e-8) * 100
+          )
+        )
+      })
+    )
+    
+    lista_metricas[[modelo]] <- metricas
+  }
+  
+  resultados_metricas <- do.call(rbind, lista_metricas)
+  
+  
+  rownames(resultados_metricas) <- NULL
+  
+  resultados <- list(
+    Metricas = resultados_metricas)
+  
+  saveRDS(resultados, file = archivo)
+  
+  message("Resultados guardados en: ", archivo)
+  
+  return(resultados)
+}
