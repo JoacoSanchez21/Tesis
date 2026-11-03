@@ -2204,9 +2204,650 @@ Estos resultados muestran que la relación entre el error de imputación y el de
 
 En cuanto a Prophet, sus RMSE fueron 0,959, 0,810 y 0,641 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h=3$, su error fue ligeramente inferior al mejor resultado de ETS (0,967), aunque superior al de ARIMA (0,881). En los horizontes de seis y doce meses, Prophet superó a los mejores resultados de ambos modelos que requieren imputación previa. Por lo tanto, en este escenario de elevada pérdida de información agrupada, Prophet constituye una alternativa competitiva, particularmente para horizontes más largos.
 
-### Datos faltantes no al azar (MNAR)
+### Datos faltantes al azar (MAR)
 
 ```{r tabla25}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MAR con 10% de datos faltantes."
+#| tbl-pos: "H"
+
+tabla <- readRDS("Resultados/MAR/resultados_MAR_10_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "7cm") %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla26}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MAR con 10% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MAR/resultados_MAR_10_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_10_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_10_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla27}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MAR con 10% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MAR/resultados_MAR_10_ETS_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_10_ETS_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_10_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla28}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MAR con 10% de datos faltantes."
+#| tbl-pos: "H"
+
+h3  <- readRDS("Resultados/MAR/resultados_MAR_10_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_10_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_10_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+En el escenario MAR con 10 % de datos faltantes, la descomposición estacional presentó el menor error de imputación, con un RMSE de 0,479, seguida por el suavizado de Kalman en un modelo estructural (0,508) y la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,525). Entre los enfoques simples, las interpolaciones lineal y de Stineman fueron las más precisas (0,784 en ambos casos), mientras que el reemplazo por un valor definido y por la moda mostraron los errores más elevados (10,976 y 2,715, respectivamente). De este modo, los métodos que incorporan la estructura temporal de la serie volvieron a superar claramente a los enfoques simples.
+
+Sin embargo, este orden no se reproduce al evaluar el desempeño predictivo. Con ARIMA, la división estacional obtuvo el menor RMSE para $h = 3$ (0,817) y $h = 6$ (0,718), seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,841) en el primer caso y por la descomposición estacional (0,724) en el segundo. Para $h=12$, la descomposición estacional y el suavizado de Kalman en un modelo estructural empataron en el menor error (0,601), con la división estacional muy próxima (0,607). Con ETS, el método de última observación trasladada hacia adelante presentó el menor RMSE para $h=3$ y $h=6$ (1,009 y 0,838), mientras que para ℎ = 12 el mejor desempeño correspondió a la división estacional (0,666), seguida por la representación del espacio en estados de ARIMA con suavizado de Kalman (0,672) y la descomposición estacional (0,673).
+
+Por su parte, Prophet, ajustado directamente sobre la serie incompleta, obtuvo RMSE de 0,822, 0,764 y 0,632 para $h=3$, $h=6$ y $h=12$, respectivamente. En los tres horizontes su error fue mayor que el mejor resultado de ARIMA (0,817, 0,718 y 0,601), pero menor que el mejor resultado de ETS (1,009, 0,838 y 0,666).
+
+En conjunto, la descomposición estacional, que fue el mejor método de imputación, solo alcanzó el mejor pronóstico con ARIMA para $h=12$ (en empate). Esto confirma que el menor error de imputación no se traduce necesariamente en el mejor desempeño predictivo y que la relación depende del modelo y del horizonte considerados. Con una pérdida de información baja, Prophet se ubica como un benchmark competitivo, intermedio entre los mejores resultados de ARIMA y de ETS.
+
+```{r tabla29}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MAR con 25% de datos faltantes."
+#| tbl-pos: "H"
+
+tabla <- readRDS("Resultados/MAR/resultados_MAR_25_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "7cm") %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla30}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MAR con 25% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MAR/resultados_MAR_25_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_25_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_25_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla31}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MAR con 25% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MAR/resultados_MAR_25_ETS_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_25_ETS_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_25_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla32}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MAR con 25% de datos faltantes."
+#| tbl-pos: "H"
+
+h3  <- readRDS("Resultados/MAR/resultados_MAR_25_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_25_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_25_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+Con 25% de datos faltantes bajo el mecanismo MAR, el suavizado de Kalman en un modelo estructural presentó el menor error de imputación (RMSE de 0,544), seguido por la descomposición estacional (0,587), la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,591) y la división estacional (0,598). Las interpolaciones lineal y de Stineman, los mejores enfoques simples, alcanzaron RMSE de 0,875 y 0,876, claramente superiores a los de los métodos estructurales. Al igual que en el escenario con 10%, el valor definido y la moda fueron los métodos con peor desempeño (11,007 y 2,723).
+
+En cuanto al pronóstico con ARIMA, la división estacional obtuvo el menor RMSE para $h=3$ (0,818), seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,869) y el suavizado de Kalman en un modelo estructural (0,877). Para $h=6$ y $h=12$, en cambio, el mejor desempeño correspondió al suavizado de Kalman en un modelo estructural (0,766 y 0,659), con la división estacional y la descomposición estacional a continuación. Con ETS, la división estacional presentó el menor RMSE en los tres horizontes (1,038, 0,852 y 0,698). Para $h=3$, la última observación trasladada hacia adelante quedó en segundo lugar (1,047), mientras que para $h=6$ y $h=12$ los segundos puestos correspondieron a los métodos basados en Kalman, con diferencias mínimas entre sí.
+
+Prophet obtuvo RMSE de 0,875, 0,777 y 0,635 para $h=3$, $h=6$ y $h=12$. Para los dos primeros horizontes, su error fue mayor que el mejor resultado de ARIMA (0,818 y 0,766), aunque menor que el de ETS (1,038 y 0,852). Para ℎ = 12, en cambio, su RMSE fue menor que el de ambos modelos (0,659 con ARIMA y 0,698 con ETS).
+
+En síntesis, el suavizado de Kalman en un modelo estructural fue el mejor método de imputación y también el mejor con ARIMA para los horizontes de seis y doce meses, pero no para el corto plazo, donde la división estacional resultó superior. Con ETS, la división estacional fue la mejor alternativa en todos los horizontes. Prophet vuelve a mostrar su mayor competitividad en el horizonte más largo.
+
+```{r tabla33}
+#| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MAR con 40% de datos faltantes."
+#| tbl-pos: "H"
+
+tabla <- readRDS("Resultados/MAR/resultados_MAR_40_ARIMA_h3.rds")
+
+tabla <- tabla %>%
+  select(Metodo, RMSE_Imp, MAE_Imp, MAPE_Imp)
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    RMSE_Imp = resaltar_min(RMSE_Imp, tabla_num$RMSE_Imp),
+    MAE_Imp  = resaltar_min(MAE_Imp,  tabla_num$MAE_Imp),
+    MAPE_Imp = resaltar_min(MAPE_Imp, tabla_num$MAPE_Imp)
+  )
+
+tabla <- tabla %>%
+  tibble::remove_rownames()
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccc",
+    booktabs = TRUE,
+    linesep = "",
+    col.names = c("Método", "RMSE", "MAE", "MAPE")
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "7cm") %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla34}
+#| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MAR con 40% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MAR/resultados_MAR_40_ARIMA_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_40_ARIMA_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_40_ARIMA_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla35}
+#| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MAR con 40% de datos faltantes."
+#| tbl-pos: "H"
+h3  <- readRDS("Resultados/MAR/resultados_MAR_40_ETS_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_40_ETS_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_40_ETS_h12.rds")
+
+h3  <- h3  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h6  <- h6  %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+h12 <- h12 %>% select(Metodo, RMSE_Pro, MAE_Pro, MAPE_Pro)
+
+colnames(h3)[-1]  <- paste0(colnames(h3)[-1], "_h3")
+colnames(h6)[-1]  <- paste0(colnames(h6)[-1], "_h6")
+colnames(h12)[-1] <- paste0(colnames(h12)[-1], "_h12")
+
+tabla <- h3 %>%
+  left_join(h6,  by = "Metodo") %>%
+  left_join(h12, by = "Metodo")
+
+tabla_num <- tabla
+
+tabla <- tabla %>%
+  mutate(
+    across(ends_with("h3"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h6"),  ~ resaltar_min(.x, tabla_num[[cur_column()]])),
+    across(ends_with("h12"), ~ resaltar_min(.x, tabla_num[[cur_column()]]))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)), 
+    booktabs = TRUE,
+    linesep = "\\addlinespace",
+    col.names = c(
+      "Método",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "5cm") %>%
+  add_header_above(
+    c(" " = 1,
+      "h=3" = 3,
+      "h=6" = 3,
+      "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r tabla36}
+#| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MAR con 40% de datos faltantes."
+#| tbl-pos: "H"
+
+h3  <- readRDS("Resultados/MAR/resultados_MAR_40_PROPHET_h3.rds")
+h6  <- readRDS("Resultados/MAR/resultados_MAR_40_PROPHET_h6.rds")
+h12 <- readRDS("Resultados/MAR/resultados_MAR_40_PROPHET_h12.rds")
+
+tabla <- data.frame(
+  Modelo = "Prophet",
+  
+  RMSE_h3 = h3$RMSE,
+  MAE_h3  = h3$MAE,
+  MAPE_h3 = h3$MAPE,
+  
+  RMSE_h6 = h6$RMSE,
+  MAE_h6  = h6$MAE,
+  MAPE_h6 = h6$MAPE,
+  
+  RMSE_h12 = h12$RMSE,
+  MAE_h12  = h12$MAE,
+  MAPE_h12 = h12$MAPE
+)
+
+tabla %>%
+  mutate(across(where(is.numeric), ~ sprintf("%.3f", .x))) %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = "lccccccccc",
+    booktabs = TRUE,
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("HOLD_position")
+  ) %>%
+  add_header_above(
+    c(" " = 1, "h=3" = 3, "h=6" = 3, "h=12" = 3),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+Cuando la proporción de datos faltantes bajo el mecanismo MAR asciende a 40%, el suavizado de Kalman en un modelo estructural presentó el menor error de imputación con un RMSE de 0,566, seguido por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,620) y la división estacional (0,650). Cabe destacar que la descomposición estacional, que había sido el método más preciso con 10 % de faltantes (0,479), se deteriora de manera notoria a medida que aumenta la pérdida de información, mientras que el suavizado de Kalman en un modelo estructural se mantiene relativamente estable (de 0,508 a 0,566). Las interpolaciones lineal y de Stineman, los mejores enfoques simples, alcanzaron RMSE de 0,952 y 0,958.
+
+Con ARIMA, la división estacional obtuvo el menor RMSE para $h=3$ (0,872), seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,931) y el suavizado de Kalman en un modelo estructural (0,964). Para $h=6$ y $h=12$, el suavizado de Kalman en un modelo estructural presentó el mejor desempeño (0,842 y 0,731). Con ETS se observa un patrón análogo: la división estacional fue el mejor método para $h=3$ (0,971), mientras que el suavizado de Kalman en un modelo estructural lo fue para $h=6$ y $h=12$ (0,870 y 0,736). A diferencia de lo observado con 10 % de faltantes, la última observación trasladada hacia adelante deja de liderar los pronósticos de corto plazo con ETS (1,159 para $h=3$).
+
+En cuanto a Prophet, se obtuvieron RMSE de 0,935, 0,800 y 0,647 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h= 3$, su error fue mayor que el mejor resultado de ARIMA (0,872), aunque menor que el de ETS (0,971). Para $h=6$ y $h=12$, en cambio, Prophet presentó menores errores que los mejores resultados de ambos modelos con imputación previa (0,842 y 0,870 para $h=6$; 0,731 y 0,736 para $h=12$).
+
+En conjunto, estos resultados indican que, con una pérdida de información elevada, los métodos que mejor reconstruyen la serie, en particular el suavizado de Kalman en un modelo estructural, resultan más favorables para el pronóstico a medio y largo plazo, mientras que la división estacional conserva ventaja en el corto plazo. Asimismo, a medida que aumenta la proporción de faltantes y el horizonte, trabajar directamente sobre la serie incompleta con Prophet constituye una alternativa competitiva e incluso superior a la imputación previa.
+
+### Datos faltantes no al azar (MNAR)
+
+```{r tabla37}
 #| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MNAR con 10% de datos faltantes."
 #| tbl-pos: "H"
 
@@ -2245,7 +2886,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla26}
+```{r tabla38}
 #| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MNAR con 10% de datos faltantes."
 #| tbl-pos: "H"
 h3  <- readRDS("Resultados/MNAR/resultados_MNAR_10_ARIMA_h3.rds")
@@ -2303,7 +2944,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla27}
+```{r tabla39}
 #| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MNAR con 10% de datos faltantes."
 #| tbl-pos: "H"
 h3  <- readRDS("Resultados/MNAR/resultados_MNAR_10_ETS_h3.rds")
@@ -2361,7 +3002,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla28}
+```{r tabla40}
 #| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MNAR con 10% de datos faltantes."
 #| tbl-pos: "H"
 
@@ -2419,7 +3060,7 @@ La comparación evidencia que el método con mejor precisión de imputación no 
 
 Prophet presentó RMSE de 0,958, 0,813 y 0,643 para $h=3$, $h=6$ y $h=12$, respectivamente. Para los horizontez de tres y seis meses, su error fue superior a los mejores resultados de ARIMA (0,935 y 0,796), pero inferior a ETS (1,111 y 0,892). En cambio, para el horizonte de doce meses, Prophet presentó errores inferiores a los mejores resultados de ARIMA (0,659) y de con ETS (0,704). Así, su desempeño fue especialmente competitivo frente a ETS, aunque no superó sistemáticamente a ARIMA.
 
-```{r tabla29}
+```{r tabla41}
 #| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MNAR con 25% de datos faltantes."
 #| tbl-pos: "H"
 
@@ -2458,7 +3099,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla30}
+```{r tabla42}
 #| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MNAR con 25% de datos faltantes."
 #| tbl-pos: "H"
 h3  <- readRDS("Resultados/MNAR/resultados_MNAR_25_ARIMA_h3.rds")
@@ -2516,7 +3157,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla31}
+```{r tabla43}
 #| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MNAR con 25% de datos faltantes."
 #| tbl-pos: "H"
 h3  <- readRDS("Resultados/MNAR/resultados_MNAR_25_ETS_h3.rds")
@@ -2574,7 +3215,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla32}
+```{r tabla44}
 #| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MNAR con 25% de datos faltantes."
 #| tbl-pos: "H"
 
@@ -2634,7 +3275,7 @@ De esta manera, a diferencia de los escenarios anteriores, se observa una corres
 
 En cuanto a Prophet, se obtuvieron RMSE de 1,164, 0,928 y 0,723 para $h=3$, $h=6$ y $h=12$, respectivamente. Su error fue inferior a los mejores resultados obtenidos tanto con ARIMA como con ETS. Por lo tanto, este modelo de referencia sin imputación previa mantuvo un desempeño competitivo, en particular frente a ambos modelos de pronóstico considerados.
 
-```{r tabla33}
+```{r tabla45}
 #| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MNAR con 40% de datos faltantes."
 #| tbl-pos: "H"
 
@@ -2673,7 +3314,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla34}
+```{r tabla46}
 #| tbl-cap: "Desempeño predictivo del modelo ARIMA según método de imputación y horizonte de pronóstico. Escenario MNAR con 40% de datos faltantes."
 #| tbl-pos: "H"
 h3  <- readRDS("Resultados/MNAR/resultados_MNAR_40_ARIMA_h3.rds")
@@ -2731,7 +3372,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla35}
+```{r tabla47}
 #| tbl-cap: "Desempeño predictivo del modelo ETS según método de imputación y horizonte de pronóstico. Escenario MNAR con 40% de datos faltantes."
 #| tbl-pos: "H"
 h3  <- readRDS("Resultados/MNAR/resultados_MNAR_40_ETS_h3.rds")
@@ -2789,7 +3430,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-```{r tabla36}
+```{r tabla48}
 #| tbl-cap: "Desempeño predictivo de Prophet como modelo de referencia sin imputación previa. Escenario MNAR con 40% de datos faltantes."
 #| tbl-pos: "H"
 
@@ -2847,7 +3488,7 @@ Estos resultados muestran que, al igual que en el caso de un 25% de datos faltan
 
 Finalmente, Prophet obtuvo RMSE de 1,367, 1,069 y 0,841 para $h=3$, $h=6$ y $h=12$, respectivamente. Para los dos primeros horizontes, sus errores fueron ligeramente superiores a los mejores resultados de ARIMA (1,359 y 1,099), mientras que para $h=12$ Prophet obtuvo un RMSE menor al mejor resultado de ARIMA (0,921). En comparación con ETS, Prophet presentó menores errores en los tres horizontes. En consecuencia, incluso con un 40 % de datos faltantes, ajustar un modelo directamente sobre la serie incompleta puede constituir una alternativa competitiva frente a la imputación previa, aunque no necesariamente supera a los mejores resultados de ARIMA.
 
-## Comparación entre mecanismos MCAR, MAR y MNAR
+## Comparación entre los mecanismos
 
 Para facilitar la comparación entre la calidad de la imputación y el desempeño predictivo posterior, se sintetizan los métodos que obtuvieron el menor RMSE promedio en cada escenario. Las @tbl-resumen-arima y @tbl-resumen-ets presentan los resultados de los modelos ARIMA y ETS, respectivamente, para horizontes de tres, seis y doce meses.
 
@@ -2860,6 +3501,9 @@ resumen_rmse <- data.frame(
     "MCAR en bloques, 10 %",
     "MCAR en bloques, 25 %",
     "MCAR en bloques, 40 %",
+    "MAR, 10 %",
+    "MAR, 25 %",
+    "MAR, 40 %",
     "MNAR, 10 %",
     "MNAR, 25 %",
     "MNAR, 40 %"
@@ -2871,9 +3515,12 @@ resumen_rmse <- data.frame(
     "Kalman estruct. (0,519)",
     "Kalman estruct. (0,567)",
     "Kalman estruct. (0,567)",
-    "Descomp. est. (0,576)",
-    "Descomp. est. (0,707)",
-    "Descomp. est. (0,771)"
+    "Descomp. est. (0,479)",
+    "Kalman estruct. (0,544)",
+    "Kalman estruct. (0,566)",
+    "Kalman estruct. (0,774)",
+    "Kalman estruct. (0,732)",
+    "Kalman estruct. (0,726)"
   ),
   `ARIMA h=3` = c(
     "División est. (0,833)",
@@ -2882,9 +3529,12 @@ resumen_rmse <- data.frame(
     "División est. (0,821)",
     "División est. (0,758)",
     "División est. (0,881)",
-    "LOCF (0,855)",
-    "LOCF (0,901)",
-    "LOCF (0,916)"
+    "División est. (0,817)",
+    "División est. (0,818)",
+    "División est. (0,872)",
+    "División est. (0,935)",
+    "Kalman estruct. (1,179)",
+    "Kalman estruct. (1,359)"
   ),
   `ARIMA h=6` = c(
     "División est. (0,730)",
@@ -2893,9 +3543,12 @@ resumen_rmse <- data.frame(
     "División est. (0,722)",
     "División est. (0,753)",
     "Kalman estruct. (0,852)",
-    "LOCF / Descomp. est. (0,727)",
-    "Descomp. est. (0,767)",
-    "Descomp. est. (0,778)"
+    "División est. (0,718)",
+    "Kalman estruct. (0,766)",
+    "Kalman estruct. (0,842)",
+    "Descomp. est. (0,796)",
+    "Kalman estruct. (0,974)",
+    "Kalman estruct. (1,099)"
   ),
   `ARIMA h=12` = c(
     "Descomp. est. (0,601)",
@@ -2904,9 +3557,12 @@ resumen_rmse <- data.frame(
     "División est. (0,607)",
     "División est. (0,647)",
     "Kalman estruct. (0,739)",
-    "Descomp. est. (0,592)",
-    "Descomp. est. (0,623)",
-    "Descomp. est. (0,643)"
+    "Descomp. est. / Kalman estruct. (0,601)",
+    "Kalman estruct. (0,659)",
+    "Kalman estruct. (0,731)",
+    "Descomp. est. (0,659)",
+    "Kalman estruct. (0,804)",
+    "Kalman estruct. (0,921)"
   ),
   `ETS h=3` = c(
     "LOCF (0,996)",
@@ -2915,9 +3571,12 @@ resumen_rmse <- data.frame(
     "División est. / Kalman-ARIMA (1,080)",
     "División est. (1,013)",
     "División est. (0,967)",
-    "LOCF (1,055)",
-    "LOCF (1,060)",
-    "LOCF (1,075)"
+    "LOCF (1,009)",
+    "División est. (1,038)",
+    "División est. (0,971)",
+    "LOCF (1,111)",
+    "Kalman estruct. (1,256)",
+    "Kalman estruct. (1,379)"
   ),
   `ETS h=6` = c(
     "LOCF (0,833)",
@@ -2926,9 +3585,12 @@ resumen_rmse <- data.frame(
     "Kalman-ARIMA (0,856)",
     "División est. (0,825)",
     "División est. (0,888)",
-    "LOCF (0,847)",
-    "LOCF (0,862)",
-    "LOCF (0,883)"
+    "LOCF (0,838)",
+    "División est. (0,852)",
+    "Kalman estruct. (0,870)",
+    "División est. (0,892)",
+    "Kalman estruct. (1,000)",
+    "Kalman estruct. (1,104)"
   ),
   `ETS h=12` = c(
     "División est. (0,659)",
@@ -2937,9 +3599,12 @@ resumen_rmse <- data.frame(
     "Kalman-ARIMA (0,670)",
     "División est. (0,664)",
     "Kalman estruct. (0,761)",
-    "Kalman estruct. (0,668)",
-    "LOCF / Descomp. est. (0,700)",
-    "División est. (0,707)"
+    "División est. (0,666)",
+    "División est. (0,698)",
+    "Kalman estruct. (0,736)",
+    "División est. (0,704)",
+    "Kalman estruct. (0,799)",
+    "Kalman estruct. (0,913)"
   ),
   check.names = FALSE
 )
@@ -2995,8 +3660,11 @@ kable(resumen_ets,
   row_spec(0, bold = TRUE)
 ``` 
 
+La comparación de los resultados muestra que no existe una correspondencia sistemática entre el método con menor error de imputación y el que alcanza el mejor desempeño predictivo: considerando los doce escenarios, los dos modelos y los tres horizontes (72 combinaciones), ambos coinciden en 28 de ellas. En términos de imputación, el suavizado de Kalman en un modelo estructural presentó el menor RMSE en 10 de los 12 escenarios, mientras que la descomposición estacional lo hizo únicamente con 10 % de faltantes bajo los mecanismos MCAR y MAR.
 
-La comparación de los resultados muestra que no existe una correspondencia sistemática entre el método con menor error de imputación y el que alcanza el mejor desempeño predictivo. En los escenarios MCAR, el suavizado de Kalman en un modelo estructural se destaca en términos de imputación para los porcentajes de pérdida de información más elevados, pero no domina de manera uniforme los pronósticos posteriores. En varios casos, la división estacional presenta menores errores con ARIMA o ETS, mientras que LOCF resulta competitivo para determinados horizontes. Por su parte, bajo el mecanismo MNAR, la descomposición estacional presenta los menores errores de imputación, aunque LOCF obtiene mejores resultados predictivos en varios escenarios de corto plazo. Estos patrones indican que la selección de un método de imputación debería considerar no solo su capacidad para reconstruir los valores faltantes, sino también el modelo de pronóstico y el horizonte de interés.
+En cuanto al pronóstico, esta ventaja no se traslada de manera uniforme. Para ℎ = 3, la división estacional presentó el menor error con ARIMA en 10 de los 12 escenarios y fue, sola o en empate, la mejor con ETS en 6 de ellos. Con ARIMA y ℎ = 6, el suavizado de Kalman en un modelo estructural fue el mejor método en 7 de los 8 escenarios con 25 % o 40 % de faltantes, y en ningún escenario con 10 %. Por su parte, LOCF resulta competitivo con ETS en el corto plazo: fue el método con menor error para ℎ = 3 en cuatro escenarios (MCAR con 10 y 25 %, MAR con 10 % y MNAR con 10 %), todos con faltantes dispersos y una pérdida de información baja o moderada, y nunca con 40 % de faltantes ni con faltantes en bloques. La única situación en la que el mejor método de imputación también domina los pronósticos de ambos modelos en todos los horizontes es MNAR con 25 % y 40 % de faltantes, donde el suavizado de Kalman en un modelo estructural resultó el mejor en las seis combinaciones; con 10 % de faltantes bajo MNAR, en cambio, no hubo coincidencia en ninguna de ellas.
+
+Estos patrones indican que la selección de un método de imputación debería considerar no solo su capacidad para reconstruir los valores faltantes, sino también el modelo de pronóstico, el horizonte de interés y la proporción de datos faltantes.
 
 \newpage
 
