@@ -72,8 +72,7 @@ introducir_bloques_pct <- function(y, prop = 0.1, tam_min = 2, tam_max = 10) {
 }
 
 #-------------------------------------------------------------------------------
-# MAR temporal: la probabilidad de que falte y_t depende del mes (siempre
-# observado) y NO del valor. Los meses "altos" pesan `razon` veces más.
+# MAR temporal
 introducir_NA_MAR <- function(y, prop = 0.1, razon = 2, meses_altos) {
   y_na <- y
   n    <- length(y)
@@ -190,7 +189,6 @@ errores <- function(serie_train, serie_trainNA, indices_na, h = 1, serie_test, p
 
 errores_prophet <- function(serie_train_NA, serie_test, h){
   
-  # Generar fechas
   fechas <- seq.Date(
     from = as.Date(paste(start(serie_train_NA)[1], start(serie_train_NA)[2], "01", sep = "-")),
     by = "month",
@@ -243,8 +241,6 @@ ejecutar_simulacion <- function(
   
   resultados_acum <- NULL
   iteraciones_exitosas <- 0
-  
-  cat("\nIniciando simulación:", resultado, "\n")
   
   for (i in 1:n_iteraciones) {
     if (i %% 10 == 0) {
@@ -314,7 +310,7 @@ ejecutar_simulacion <- function(
 ejecutar_pronosticos <- function(
     serie_train,
     serie_test,
-    modelos = c("ARIMA", "ETS", "PROPHET"),
+    modelos = c("ARIMA", "ETS", "Prophet"),
     horizontes = c(3, 6, 12),
     archivo = "Resultados/evaluacion_pronosticos.rds"
 ) {
@@ -362,7 +358,7 @@ ejecutar_pronosticos <- function(
   
   modelos <- match.arg(
     modelos,
-    choices = c("ARIMA", "ETS", "PROPHET"),
+    choices = c("ARIMA", "ETS", "Prophet"),
     several.ok = TRUE
   )
   
@@ -393,7 +389,6 @@ ejecutar_pronosticos <- function(
   )
   
   lista_metricas <- list()
-  lista_pronosticos <- list()
   
   for (modelo in modelos) {
     
@@ -421,7 +416,7 @@ ejecutar_pronosticos <- function(
       pronosticos <- as.numeric(fc$mean)
     }
     
-    if (modelo == "PROPHET") {
+    if (modelo == "Prophet") {
       
       datos_prophet <- data.frame(
         ds = fechas_train,
@@ -445,17 +440,6 @@ ejecutar_pronosticos <- function(
     
     reales <- as.numeric(serie_test)[1:h_max]
     
-    tabla_pronosticos <- data.frame(
-      Modelo = modelo,
-      Horizonte = 1:h_max,
-      Fecha = fechas_test,
-      Real = reales,
-      Pronostico = pronosticos,
-      Error = reales - pronosticos
-    )
-    
-    lista_pronosticos[[modelo]] <- tabla_pronosticos
-    
     metricas <- do.call(
       rbind,
       lapply(horizontes, function(h) {
@@ -478,17 +462,12 @@ ejecutar_pronosticos <- function(
     lista_metricas[[modelo]] <- metricas
   }
   
-  resultados_metricas <- do.call(rbind, lista_metricas)
+  resultados_finales <- do.call(rbind, lista_metricas)
   
+  rownames(resultados_finales) <- NULL
   
-  rownames(resultados_metricas) <- NULL
+  saveRDS(resultados_finales, file = archivo)
   
-  resultados <- list(
-    Metricas = resultados_metricas)
-  
-  saveRDS(resultados, file = archivo)
-  
-  message("Resultados guardados en: ", archivo)
-  
-  return(resultados)
+  return(resultados_finales)
 }
+
