@@ -55,6 +55,7 @@ library(kableExtra)
 library(knitr)
 library(lubridate)
 library(readr)
+library(tidyr)
 library(tseries)
 library(zoo)
 
@@ -259,7 +260,7 @@ La función de autocorrelación constituye una herramienta fundamental para el a
 Para cada rezago $k$, la función de autocorrelación mide la intensidad de la relación lineal entre 
 $Y_t$ y $Y_{t+k}$, tomando valores comprendidos entre -1 y 1. Valores cercanos a 1 indican una fuerte correlación positiva, mientras que valores próximos a -1 reflejan una correlación negativa. Por su parte, valores cercanos a cero sugieren ausencia de dependencia lineal significativa para ese rezago. En el caso de series temporales estacionarias, la función de autocorrelación depende únicamente del rezago y no del tiempo, lo que simplifica su análisis e interpretación.
 
-Formalmente, la autocorrelación para un rezago 𝑘 se calcula utilizando la siguiente fórmula:
+Formalmente, la autocorrelación para un rezago $k$  se calcula utilizando la siguiente fórmula:
 
 \begin{equation}
 \rho_k = \frac{\sum_{t=k+1}^{T} (y_t - \bar{y})(y_{t-k} - \bar{y})}{\sum_{t=1}^{T} (y_t - \bar{y})^2}
@@ -309,7 +310,7 @@ Se denomina imputación al proceso que utiliza la información procedente de la 
 
 La imputación de datos faltantes es más sencilla cuando estos ocurren completamente al azar (MCAR). Esto se debe a que en el caso de MNAR, las observaciones faltantes pueden formar fragmentos lo suficientemente grandes como para ocultar los componentes estructurales de las series temporales. Sin embargo, si la serie temporal presenta una estructura temporal bien definida, los métodos de imputación que aprovechan características como la estacionalidad, los ciclos y la autocorrelación pueden tener una ventaja sobre otros métodos más simples.
 
-Una observación muy importante es que la eficiencia de cada técnica depende del conjunto de datos. Esto significa que cada técnica funciona de manera diferente dependiendo de la estructura de cada serie temporal; en otras palabras, no existe un método único que se adapte a todos los tipos de datos. Esto debe tomarse seriamente en cuenta al intentar elegir un método apropiado para la imputación de múltiples datos en series temporales. Por lo tanto, es necesario analizar las características específicas de la serie temporal con datos faltantes y, a partir de ese análisis, seleccionar el procedimiento de imputación que mejor se adapte a dicha estructura.
+Debe tenerse en cuenta que la eficiencia de cada técnica depende del conjunto de datos. Esto significa que cada técnica funciona de manera diferente dependiendo de la estructura de cada serie temporal; en otras palabras, no existe un método único que se adapte a todos los tipos de datos. Esto debe tomarse seriamente en cuenta al intentar elegir un método apropiado para la imputación de múltiples datos en series temporales. Por lo tanto, es necesario analizar las características específicas de la serie temporal con datos faltantes y, a partir de ese análisis, seleccionar el procedimiento de imputación que mejor se adapte a dicha estructura.
 
 A continuación, se describen los métodos de imputación que serán evaluados en cada situación.
 
@@ -631,7 +632,7 @@ $$
 y(t) = g(t) + s(t) + h(t) + \varepsilon_t,
 $$
 
-donde $g(t)$ representa la tendencia de largo plazo, $s(t)$ captura los patrones estacionales periódicos, $h(t)$ recoge los efectos de eventos especiales o días festivos y $\varepsilon_t$ representa el término de error, que se supone distribuido normalmente con media cero y varianza $\sigma_\varepsilon^2)$.
+donde $g(t)$ representa la tendencia de largo plazo, $s(t)$ captura los patrones estacionales periódicos, $h(t)$ recoge los efectos de eventos especiales o días festivos y $\varepsilon_t$ representa el término de error, que se supone distribuido normalmente con media cero y varianza $\sigma_\varepsilon^2$.
 
 El componente de tendencia puede especificarse mediante una función lineal por tramos o una función logística. Asimismo, el modelo permite detectar automáticamente puntos de cambio en la tendencia histórica. La estacionalidad se representa mediante series de Fourier, lo que proporciona flexibilidad para capturar patrones periódicos complejos. También admite una especificación multiplicativa de la estacionalidad, en la que la amplitud de las fluctuaciones estacionales depende del nivel de la tendencia. Esta alternativa resulta apropiada cuando las variaciones estacionales aumentan o disminuyen en proporción al nivel de la serie. Por otra parte, los efectos de eventos particulares pueden incorporarse mediante información específica sobre sus fechas y características.
 
@@ -653,77 +654,48 @@ En una primera instancia se evaluará el desempeño de los métodos de imputaci�
 
 En una segunda etapa se evaluará el impacto de los métodos de imputación sobre el desempeño de los modelos de pronóstico. Para ello se ajustarán distintos modelos de series temporales sobre las series imputadas y se generarán pronósticos para un horizonte determinado. Posteriormente, los valores pronosticados se compararán con los valores reales mediante métricas de error como RMSE, MAE y MAPE.
 
+Como referencia, se ajustarán los mismos modelos sobre el conjunto de entrenamiento completo, sin valores faltantes. El error de pronóstico así obtenido (línea base) permite cuantificar la pérdida de precisión atribuible a los datos faltantes y a su tratamiento, y se distingue de Prophet, que se aplica sobre series incompletas sin imputación previa.
+
 ### Métricas del error
 
 Para evaluar el desempeño tanto de los métodos de imputación como de los modelos de pronóstico se utilizarán distintas métricas de error comúnmente empleadas en el análisis de series temporales.
 
-En este contexto, el error se define como la diferencia entre un valor observado y el valor estimado o pronosticado por el modelo. En particular, se considerarán el error cuadrático medio (RMSE), el error absoluto medio (MAE) y el error porcentual absoluto medio (MAPE), cuyas expresiones se presentan a continuación.
+En este contexto, el error se define como la diferencia entre un valor observado y el valor estimado o pronosticado por el modelo. En particular, se considerarán la raíz del error cuadrático medio (RMSE), el error absoluto medio (MAE) y el error porcentual absoluto medio (MAPE), cuyas expresiones se presentan a continuación.
 
 * Error absoluto medio (MAE): Esta métrica es una medida de la diferencia entre dos valores, es decir, permite saber qué tan diferente es el valor predicho y el valor real u observado. Para que un error con valor positivo no cancele a un error con error negativo se usa el valor absoluto de la diferencia. Como interesa conocer el comportamiento del error de todas las observaciones y no solamente de una, entonces se obtiene el promedio de los valores absolutos de la diferencia.
 
 \begin{equation}
-MAE = \frac{\sum_{t=1}^{n} |\hat{y}_t - y_t|}{n_m}
+MAE = \frac{\sum_{t=1}^{n} |\hat{y}_t - y_t|}{n}
 \end{equation}
 
 * Error medio cuadrado (MSE)
 Esta métrica es muy útil para saber qué tan cerca es la línea de ajuste de la regresión a las observaciones. Al igual que en caso anterior se evita que un error con valor positivo anule a uno con valor negativo, pero en lugar de usar el valor absoluto, se eleva al cuadrado la diferencia.
-Siempre da un valor positivo y entre más cercano sea a cero es mejor.
+Siempre da un valor positivo y entre más cercano sea a cero es mejor. Esta métrica se presenta como paso previo para definir el RMSE y no será reportada en los resultados.
 
 \begin{equation}
-MSE = \frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}
+MSE = \frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n}
 \end{equation}
+
 * Raíz del error medio cuadrado (RMSE)
 Como la métrica anterior da el resultado en unidades cuadradas, para poder interpretarlo más fácilmente se saca la raíz cuadrada y de esta manera se obtiene el valor en las unidades originales.
 
 \begin{equation}
-RMSE = \sqrt\frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n_m}
+RMSE = \sqrt\frac{\sum_{t=1}^{n} (\hat{y_t} - y_t)^{2}}{n}
 \end{equation}
+
 * Porcentaje de error medio absoluto (MAPE)
 Esta es una métrica de la precisión, pero se presenta como si fuera un porcentaje, como ventaja tiene que es independiente de la escala y fácil de interpretar. Como desventaja es que puede producir valores no definidos, infinito o muy cercanos a cero.
 El calculo es sencillo, para cada observación se obtiene su porcentaje de error y luego se calcula la media de todos esos valores.
 
 \begin{equation}
-MAPE = \frac{100}{n_m}\sum_{t=1}^{n}\left| \frac{y_t - \hat{y}_t}{y_t} \right|
+MAPE = \frac{100}{n}\sum_{t=1}^{n}\left| \frac{y_t - \hat{y}_t}{y_t} \right|
 \end{equation}
-siendo $y_t$ el valor observado, $\hat{y_t}$ el valor imputado o pronosticado y $n_m$ la cantidad de valores perdidos o pronosticados.
+siendo $y_t$ el valor observado, $\hat{y_t}$ el valor imputado o pronosticado y $n$ la cantidad de valores perdidos o pronosticados.
+
+En las cuatro métricas, un valor menor indica un menor error y, por lo tanto, un mejor desempeño de la imputación o del pronóstico; el valor óptimo es cero, que corresponde a reproducir exactamente los valores observados. El RMSE y el MAE se expresan en las unidades de la serie, el MSE en unidades al cuadrado y el MAPE en porcentaje; el MSE y el RMSE penalizan en mayor medida los errores grandes. El MSE se presenta como paso intermedio para definir el RMSE: en los resultados se reportan el RMSE, el MAE y el MAPE, y el RMSE se utiliza como criterio principal de comparación. Las métricas solo son comparables entre métodos evaluados sobre las mismas observaciones: en imputación, sobre los valores faltantes de cada escenario; en pronóstico, sobre los primeros $h$ meses del conjunto de prueba.
 
 \newpage
-# Aplicación
-
-Con el objetivo de evaluar el impacto de distintos métodos de imputación sobre el desempeño de modelos de pronóstico en series temporales univariadas, se plantea un procedimiento experimental basado en la introducción controlada de datos faltantes en series originalmente completas. Esta estrategia permite conocer en todo momento los valores reales de las observaciones eliminadas y, en consecuencia, evaluar la calidad de las imputaciones realizadas y su efecto sobre la precisión de los pronósticos. Al introducir los valores faltantes, no se consideraron los extremos de la serie, dado que su imputación requeriría extrapolar a partir de las observaciones disponibles, en lugar de interpolar utilizando información a ambos lados del valor faltante.
-
-Se selecciona una serie temporal univariada completa, es decir, sin valores faltantes, y sobre esta se realiza un análisis exploratorio inicial con el fin de identificar sus principales características, tales como la presencia de tendencia, estacionalidad, posibles valores atípicos y estructura de autocorrelación. Asimismo, cada serie se divide en un conjunto de entrenamiento y un conjunto de prueba. El conjunto de entrenamiento se utiliza para realizar la imputación de los datos faltantes y ajustar los modelos de pronóstico, mientras que el conjunto de prueba permanece sin modificaciones y se emplea exclusivamente para evaluar la capacidad predictiva de los modelos.
-
-A partir de las series de entrenamiento se generan artificialmente distintos escenarios de datos faltantes. Para ello se consideran diferentes porcentajes de observaciones ausentes y distintos mecanismos de generación de faltantes, reproduciendo situaciones que pueden presentarse en situaciones reales. En todos los casos, la introducción de valores faltantes se restringe al interior de la serie, preservando los extremos inicial y final para garantizar que el procedimiento corresponda a una imputación y no a un problema de pronóstico hacia adelante o hacia atrás.
-
-Una vez generados los escenarios de datos faltantes, se aplican los diferentes métodos de imputación considerados para reconstruir las observaciones ausentes. Con el propósito de reducir el efecto del azar asociado a la ubicación de los datos faltantes, cada combinación de serie, mecanismo y porcentaje de faltantes se replica 100 veces utilizando distintas configuraciones de eliminación aleatoria. De esta manera, los resultados obtenidos corresponden al promedio de un elevado número de iteraciones, proporcionando estimaciones más estables del desempeño de cada método. 
-
-La calidad de las imputaciones se evalúa comparando los valores imputados con las observaciones originales eliminadas artificialmente. Para cuantificar la precisión de cada método se utilizan las métricas RMSE, MAE y MAPE, anteriormente definidas.
-
-Luego, utilizando las series imputadas, se ajustan los modelos de pronóstico ARIMA/SARIMA y ETS, siguiendo el enfoque forecast-after-imputation. Adicionalmente, se ajusta Prophet directamente sobre la serie con valores faltantes, sin aplicar imputación previa. De este modo, Prophet se incorpora como un *benchmark* externo al esquema *forecast-after-imputation*, permitiendo comparar la estrategia de imputar y luego pronosticar con una alternativa que puede generar predicciones a partir de series incompletas. Los pronósticos se generan para horizontes de $h=3, 6\text{ y }12$ períodos hacia adelante. Finalmente, el desempeño predictivo de cada modelo se evalúa comparando los valores pronosticados con las observaciones reales del conjunto de prueba mediante las mismas métricas de error utilizadas para evaluar la imputación. Esto permite analizar no solo la capacidad de cada método para reconstruir los valores faltantes, sino también el impacto que dichas imputaciones tienen sobre la precisión de los pronósticos posteriores. El ajuste de los modelos ARIMA/SARIMA se realiza mediante la función `auto.arima()`, mientras que para los modelos ETS se utiliza la función `ets()`, ambas pertenecientes al paquete `forecast` de R. Estas funciones permiten seleccionar automáticamente una especificación del modelo a partir de un conjunto de alternativas, utilizando un criterio de información para determinar la más adecuada. En el caso de `auto.arima()`, la búsqueda considera distintos órdenes autorregresivos y de media móvil, tanto estacionales como no estacionales, así como la necesidad de aplicar diferenciación estacional y no estacional. Por su parte, `ets()` selecciona automáticamente la combinación de componentes de error, tendencia y estacionalidad que mejor se ajusta a los datos, contemplando distintas estructuras dentro de la familia de modelos de suavizamiento exponencial.
-
-El procedimiento completo puede resumirse en las siguientes etapas:
-
-1 - Selección de la serie temporal. Se seleccionan series temporales univariadas completas, que servirán como referencia para la generación de los escenarios experimentales.
-
-2 - Análisis exploratorio de la serie. Se estudian las principales características de cada serie, incluyendo tendencia, estacionalidad, autocorrelación y posibles valores atípicos. Asimismo, se define la partición entre conjunto de entrenamiento y conjunto de prueba.
-
-3 - Generación de datos faltantes. Se introducen valores faltantes de forma artificial sobre el conjunto de entrenamiento, considerando distintos porcentajes y mecanismos de generación de faltantes.
-
-4 - Aplicación de los métodos de imputación. Se imputan las observaciones faltantes mediante las técnicas consideradas en el estudio.
-
-5 - Evaluación de la imputación. Se comparan los valores imputados con los valores originales mediante las métricas RMSE, MAE y MAPE.
-
-6 - Ajuste de los modelos de pronóstico. Se ajustan los modelos ARIMA/SARIMA y ETS utilizando las series imputadas, mientras que Prophet se ajusta directamente sobre la serie con datos faltantes.
-
-7 - Generación de pronósticos. Se obtienen predicciones para horizontes de $h=3, 6\text{ y }12$.
-
-8 - Evaluación del pronóstico. Se comparan los pronósticos con las observaciones del conjunto de prueba utilizando las métricas RMSE, MAE y MAPE.
-
-9 - Comparación de resultados. Se analizan conjuntamente los errores de imputación y de pronóstico para determinar el efecto que tienen los distintos métodos de imputación sobre el desempeño predictivo de cada modelo.
-
-
-## Caso de aplicación: Consumo de electricidad {.unnumbered}
+# Aplicación: Consumo de electricidad
 
 ```{r}
 #Carga de datos
@@ -899,6 +871,114 @@ ggmonthplot(serie_train)+
 ```
 
 La @fig-grafico6 confirma la presencia de un patrón estacional anual. Los mayores niveles medios de demanda se observan principalmente durante los meses de verano, mientras que abril presenta uno de los niveles más bajos. Este comportamiento evidencia que el nivel esperado de la serie varía sistemáticamente según el mes del año.
+
+## Diseño de la simulación
+
+Con el objetivo de evaluar el impacto de distintos métodos de imputación sobre el desempeño de modelos de pronóstico en series temporales univariadas, se plantea un procedimiento experimental basado en la introducción controlada de datos faltantes en series originalmente completas. Esta estrategia permite conocer en todo momento los valores reales de las observaciones eliminadas y, en consecuencia, evaluar la calidad de las imputaciones realizadas y su efecto sobre la precisión de los pronósticos. Al introducir los valores faltantes, no se consideraron los extremos de la serie, dado que su imputación requeriría extrapolar a partir de las observaciones disponibles, en lugar de interpolar utilizando información a ambos lados del valor faltante.
+
+Se selecciona una serie temporal univariada completa, es decir, sin valores faltantes, y sobre esta se realiza un análisis exploratorio inicial con el fin de identificar sus principales características, tales como la presencia de tendencia, estacionalidad, posibles valores atípicos y estructura de autocorrelación. Asimismo, cada serie se divide en un conjunto de entrenamiento y un conjunto de prueba. El conjunto de entrenamiento se utiliza para realizar la imputación de los datos faltantes y ajustar los modelos de pronóstico, mientras que el conjunto de prueba permanece sin modificaciones y se emplea exclusivamente para evaluar la capacidad predictiva de los modelos.
+
+A partir de las series de entrenamiento se generan artificialmente distintos escenarios de datos faltantes. Para ello se consideran diferentes porcentajes de observaciones ausentes y distintos mecanismos de generación de faltantes, reproduciendo situaciones que pueden presentarse en situaciones reales. En todos los casos, la introducción de valores faltantes se restringe al interior de la serie, preservando los extremos inicial y final para garantizar que el procedimiento corresponda a una imputación y no a un problema de pronóstico hacia adelante o hacia atrás.
+
+Una vez generados los escenarios de datos faltantes, se aplican los diferentes métodos de imputación considerados para reconstruir las observaciones ausentes. Con el propósito de reducir el efecto del azar asociado a la ubicación de los datos faltantes, cada combinación de serie, mecanismo y porcentaje de faltantes se replica 100 veces utilizando distintas configuraciones de eliminación aleatoria. De esta manera, los resultados obtenidos corresponden al promedio de un elevado número de iteraciones, proporcionando estimaciones más estables del desempeño de cada método. 
+
+La calidad de las imputaciones se evalúa comparando los valores imputados con las observaciones originales eliminadas artificialmente. Para cuantificar la precisión de cada método se utilizan las métricas RMSE, MAE y MAPE, anteriormente definidas.
+
+Luego, utilizando las series imputadas, se ajustan los modelos de pronóstico ARIMA/SARIMA y ETS, siguiendo el enfoque forecast-after-imputation. Adicionalmente, se ajusta Prophet directamente sobre la serie con valores faltantes, sin aplicar imputación previa. De este modo, Prophet se incorpora como un *benchmark* externo al esquema *forecast-after-imputation*, permitiendo comparar la estrategia de imputar y luego pronosticar con una alternativa que puede generar predicciones a partir de series incompletas. Los pronósticos se generan para horizontes de $h=3, 6\text{ y }12$ períodos hacia adelante. También se realizarán pronósticos con los modelos ARIMA/SARIMA y ETS utilizando la serie completa, con el fin de tener estos resultados como línea base. Finalmente, el desempeño predictivo de cada modelo se evalúa comparando los valores pronosticados con las observaciones reales del conjunto de prueba mediante las mismas métricas de error utilizadas para evaluar la imputación. Esto permite analizar no solo la capacidad de cada método para reconstruir los valores faltantes, sino también el impacto que dichas imputaciones tienen sobre la precisión de los pronósticos posteriores. El ajuste de los modelos ARIMA/SARIMA se realiza mediante la función `auto.arima()`, mientras que para los modelos ETS se utiliza la función `ets()`, ambas pertenecientes al paquete `forecast` de R. Estas funciones permiten seleccionar automáticamente una especificación del modelo a partir de un conjunto de alternativas, utilizando un criterio de información para determinar la más adecuada. En el caso de `auto.arima()`, la búsqueda considera distintos órdenes autorregresivos y de media móvil, tanto estacionales como no estacionales, así como la necesidad de aplicar diferenciación estacional y no estacional. Por su parte, `ets()` selecciona automáticamente la combinación de componentes de error, tendencia y estacionalidad que mejor se ajusta a los datos, contemplando distintas estructuras dentro de la familia de modelos de suavizamiento exponencial.
+
+El procedimiento completo puede resumirse en las siguientes etapas:
+
+1 - Selección de la serie temporal. Se seleccionan series temporales univariadas completas, que servirán como referencia para la generación de los escenarios experimentales.
+
+2 - Análisis exploratorio de la serie. Se estudian las principales características de cada serie, incluyendo tendencia, estacionalidad, autocorrelación y posibles valores atípicos. Asimismo, se define la partición entre conjunto de entrenamiento y conjunto de prueba.
+
+3 - Línea base. Previo a la introducción de faltantes, se ajustan los modelos ARIMA/SARIMA y ETS sobre la serie completa. Luego, se obtienen los pronósticos para los horizontes de 3, 6 y 12 meses.
+
+4 - Generación de datos faltantes. Se introducen valores faltantes de forma artificial sobre el conjunto de entrenamiento, considerando distintos porcentajes y mecanismos de generación de faltantes.
+
+5 - Aplicación de los métodos de imputación. Se imputan las observaciones faltantes mediante las técnicas consideradas en el estudio.
+
+6 - Evaluación de la imputación. Se comparan los valores imputados con los valores originales mediante las métricas RMSE, MAE y MAPE.
+
+7 - Ajuste de los modelos de pronóstico. Se ajustan los modelos ARIMA/SARIMA y ETS utilizando las series imputadas, mientras que Prophet se ajusta directamente sobre la serie con datos faltantes.
+
+8 - Generación de pronósticos. Se obtienen predicciones para horizontes de $h=3, 6\text{ y }12$.
+
+9 - Evaluación del pronóstico. Se comparan los pronósticos con las observaciones del conjunto de prueba utilizando las métricas RMSE, MAE y MAPE.
+
+10 - Comparación de resultados. Se analizan conjuntamente los errores de imputación y de pronóstico para determinar el efecto que tienen los distintos métodos de imputación sobre el desempeño predictivo de cada modelo.
+
+### MCAR (Disperso)
+
+### MCAR (En bloques)
+
+### MAR
+
+### MNAR
+
+## Desempeño predictivo con la serie completa (Línea base)
+
+Antes de analizar los escenarios con datos faltantes, se evaluó el desempeño predictivo de los modelos ajustados sobre la serie de entrenamiento completa (enero de 2010 a diciembre de 2024), sin valores faltantes ni imputación. Estos resultados constituyen la línea base con la que se compara el desempeño obtenido en cada escenario. Dado que el procedimiento no incluye componentes aleatorios, se realizó una única vez. Los pronósticos se generaron a 12 meses y, para cada $h$, el error se calculó sobre los primeros $h$ meses de 2025.
+
+```{r tablaprono}
+#| tbl-cap: "Desempeño de los modelos de pronóstico según horizonte y métricas de error utilizando la serie completa (línea base)."
+#| tbl-pos: "H"
+
+tabla <- readRDS("Resultados/evaluacion_pronosticos.rds")
+
+tabla <- tabla %>%
+  pivot_wider(
+    names_from = Horizonte,
+    values_from = c(RMSE, MAE, MAPE),
+    names_glue = "{.value}_h{Horizonte}"
+  ) %>%
+  select(
+    Modelo,
+    RMSE_h3, MAE_h3, MAPE_h3,
+    RMSE_h6, MAE_h6, MAPE_h6,
+    RMSE_h12, MAE_h12, MAPE_h12
+  )
+
+tabla <- tabla %>%
+  mutate(
+    across(-Modelo, ~ sprintf("%.3f", .x))
+  )
+
+tabla %>%
+  kable(
+    format = "latex",
+    escape = FALSE,
+    align = c("l", rep("c", 9)),
+    booktabs = TRUE,
+    linesep = "",
+    col.names = c(
+      "Modelo",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE",
+      "RMSE", "MAE", "MAPE"
+    )
+  ) %>%
+  kable_styling(
+    full_width = FALSE,
+    position = "center",
+    latex_options = c("scale_down", "HOLD_position")
+  ) %>%
+  column_spec(1, width = "3cm") %>%
+  add_header_above(
+    c(
+      " " = 1,
+      "h = 3" = 3,
+      "h = 6" = 3,
+      "h = 12" = 3
+    ),
+    bold = TRUE
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+Prophet obtuvo el menor RMSE con $h=3$ (0,804), mientras que en el caso de $h=6$ y $h=12$ fue ARIMA (0,718 y 0,585). ETS presentó el mayor RMSE en los tres horizontes, aunque con $h=12$ registró el menor MAE y MAPE (0,461 y 3,692), lo que sugiere que sus errores se concentran en pocos meses de magnitud elevada.
+
+En los tres modelos el RMSE disminuye al aumentar $h$. Como las ventanas están anidadas, este descenso no indica un mejor pronóstico a mayor plazo, sino que los errores se concentran en los primeros meses de 2025.
 
 ## Resultados
 
@@ -1113,13 +1193,13 @@ tabla %>%
 
 \newpage
 
-En términos de imputación en el escenario MCAR con 10 % de datos faltantes, la descomposición estacional presentó el menor error, con un RMSE de 0,497, seguida por el suavizado de Kalman en un modelo estructural (0,515), la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,543) y la división estacional (0,552). En consecuencia, los métodos que incorporan la estructura temporal de la serie presentaron, en general, un mejor desempeño que los enfoques simples.
+En términos de imputación en el escenario MCAR con 10% de datos faltantes, la descomposición estacional presentó el menor error, con un RMSE de 0,497, seguida por el suavizado de Kalman en un modelo estructural (0,515), la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,543) y la división estacional (0,552). En consecuencia, los métodos que incorporan la estructura temporal de la serie presentaron, en general, un mejor desempeño que los enfoques simples.
 
-Al evaluar el desempeño predictivo mediante ARIMA, los resultados no reproducen exactamente este orden. Para un horizonte de 3 meses $(h=3)$, la división estacional obtuvo el menor RMSE (0,833), seguida por el método de última observación trasladada hacia adelante (0,841), mientras que la descomposición estacional alcanzó 0,867. Para $h=6$, la división estacional volvió a presentar el menor error (0,730), aunque los métodos basados en Kalman mostraron valores muy próximos. En cambio, para $h=12$, la descomposición estacional pasó a presentar el mejor desempeño, con un RMSE de 0,601, seguida por la división estacional (0,607).
+Al evaluar el desempeño predictivo mediante ARIMA, los resultados no reproducen exactamente este orden. Para un horizonte de 3 meses $(h=3)$, la división estacional obtuvo el menor RMSE (0,833), seguida por el método de última observación trasladada hacia adelante (0,841), mientras que la descomposición estacional alcanzó 0,867. Para $h=6$, la división estacional volvió a presentar el menor error (0,730), aunque los métodos basados en Kalman mostraron valores muy próximos. En cambio, para $h=12$, la descomposición estacional pasó a presentar el menor error, con un RMSE de 0,601, seguida por la división estacional (0,607).
 
 Los resultados obtenidos con ETS muestran un comportamiento diferente. Para $h=3$ y $h=6$, el menor RMSE correspondió al método de última observación trasladada hacia adelante, con valores de 0,996 y 0,833, respectivamente. Para $h=12$, en cambio, la división estacional presentó el menor RMSE (0,659). De este modo, el método con menor error de imputación no coincide necesariamente con el que produce los mejores pronósticos, y esta relación también depende del modelo y del horizonte considerados.
 
-Por su parte, Prophet, ajustado directamente sobre la serie incompleta y sin realizar una imputación previa, presentó RMSE de 0,826, 0,752 y 0,638 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h=3$, Prophet obtuvo un desempeño ligeramente mejor que el mejor resultado de ARIMA (0,833) y claramente mejor que el obtenido con ETS (0,996). Para $h=6$, su RMSE fue superior al mejor resultado de ARIMA (0,730), pero inferior al mejor resultado de ETS (0,833). Finalmente, para $h=12$, Prophet presentó un RMSE de 0,638, superior al mejor resultado de ARIMA (0,601), pero inferior al obtenido con ETS (0,659).
+Por su parte, Prophet, ajustado directamente sobre la serie incompleta y sin realizar una imputación previa, presentó RMSE de 0,826, 0,752 y 0,638 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h=3$, Prophet obtuvo un error ligeramente menor que el mejor resultado de ARIMA (0,833) y claramente mejor que el obtenido con ETS (0,996). Para $h=6$, su RMSE fue superior al menor error de ARIMA (0,730), pero inferior al menor resultado de ETS (0,833). Finalmente, para $h=12$, Prophet presentó un RMSE de 0,638, superior al menor error de ARIMA (0,601), pero inferior al obtenido con ETS (0,659).
 
 En conjunto, este escenario muestra que con una proporción relativamente baja de datos faltantes la superioridad en términos de imputación no se traduce necesariamente en una ventaja predictiva posterior. Asimismo, Prophet constituye un *benchmark* competitivo, especialmente frente a ETS, aunque no supera sistemáticamente a los mejores resultados obtenidos mediante imputación previa y ARIMA.
 
@@ -1330,7 +1410,7 @@ tabla %>%
 
 \newpage
 
-En el escenario de faltantes MCAR con 25 % de datos faltantes, en términos de imputación, el suavizado de Kalman en un modelo estructural presentó el menor error, con un RMSE de 0,542, seguido por la descomposición estacional (0,580), la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,589) y la división estacional (0,608). Estos resultados muestran nuevamente una ventaja de los métodos que incorporan la estructura temporal de la serie frente a los enfoques simples.
+En el escenario de faltantes MCAR con 25% de datos faltantes, en términos de imputación, el suavizado de Kalman en un modelo estructural presentó el menor error, con un RMSE de 0,542, seguido por la descomposición estacional (0,580), la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,589) y la división estacional (0,608). Estos resultados muestran nuevamente una ventaja de los métodos que incorporan la estructura temporal de la serie frente a los enfoques simples.
 
 Al analizar el desempeño predictivo con ARIMA, el ranking de los métodos no coincide exactamente con el obtenido en la etapa de imputación. Para $h=3$, la división estacional presentó el menor RMSE, con un valor de 0,798, seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,869) y el suavizado de Kalman en un modelo estructural (0,881). Para $h=6$, el suavizado de Kalman en un modelo estructural presentó el menor RMSE (0,756), al igual que para $h=12$, con un RMSE de 0,649, seguido muy de cerca por la descomposición estacional (0,651) y la división estacional (0,659).
 
@@ -1338,7 +1418,7 @@ En el caso de ETS, la relación entre imputación y pronóstico vuelve a diferir
 
 Por lo tanto, al igual que en los escenarios anteriores, el menor error de imputación no garantiza el mejor desempeño predictivo posterior. En particular, aunque el suavizado de Kalman en un modelo estructural fue el método con mejor desempeño de imputación, la división estacional obtuvo mejores resultados con ARIMA para los horizontes de tres y seis meses, mientras que para horizontes más largos las diferencias entre varios métodos estructurales se reducen.
 
-Finalmente, Prophet, que se ajusta directamente sobre la serie incompleta y no requiere imputación previa, obtuvo RMSE de 0,858, 0,782 y 0,635 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h=3$, este resultado es inferior al mejor desempeño de ARIMA (0,798), pero superior al de ETS (1,013), misma relación que se observa al analizar el caso de $h=6$. Para $h=12$, en cambio, Prophet alcanza un RMSE de 0,635, ligeramente inferior al mejor resultado de ARIMA (0,649) y también inferior al mejor resultado de ETS (0,664).
+Finalmente, Prophet, que se ajusta directamente sobre la serie incompleta y no requiere imputación previa, obtuvo RMSE de 0,858, 0,782 y 0,635 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h=3$, este resultado es mayor al menor error de ARIMA (0,798), pero inferior al de ETS (0,970), misma relación que se observa al analizar el caso de $h=6$. Para $h=12$, en cambio, Prophet alcanza un RMSE de 0,635, ligeramente inferior al mejor resultado de ARIMA (0,649) y también inferior al mejor resultado de ETS (0,690).
 
 En conjunto, este escenario refuerza la ausencia de una correspondencia directa entre precisión de imputación y desempeño predictivo. Además, muestra que el efecto de la imputación sobre el pronóstico depende tanto del modelo utilizado como del horizonte considerado, mientras que Prophet constituye un benchmark competitivo, especialmente para horizontes de mayor extensión.
 
@@ -1549,13 +1629,13 @@ tabla %>%
 
 \newpage
 
-Para un 40 % de datos faltantes bajo el mecanismo MCAR, los métodos que aprovechan la estructura temporal de la serie presentaron, en general, menores errores de imputación que los enfoques simples. El suavizado de Kalman en un modelo estructural obtuvo el menor RMSE de imputación (0,568), seguido por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,613), la división estacional (0,638) y la descomposición estacional (0,664). En contraste, los métodos basados en valores constantes presentaron errores sustancialmente mayores.
+Para un 40% de datos faltantes bajo el mecanismo MCAR, los métodos que aprovechan la estructura temporal de la serie presentaron, en general, menores errores de imputación que los enfoques simples. El suavizado de Kalman en un modelo estructural obtuvo el menor RMSE de imputación (0,568), seguido por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,613), la división estacional (0,638) y la descomposición estacional (0,664). En contraste, los métodos basados en valores constantes presentaron errores sustancialmente mayores.
 
 Sin embargo, este orden no se reproduce exactamente al evaluar el desempeño predictivo. Para ARIMA y un horizonte de tres meses ($h=3$), la división estacional presentó el menor RMSE entre los métodos basados en la estructura temporal considerados (0,871), mientras que el suavizado de Kalman en un modelo estructural alcanzó 0,996. Para $h=12$, en cambio, ambos métodos mostraron desempeños similares, con RMSE de 0,751 y 0,743, respectivamente.
 
 Un comportamiento similar se observa con ETS: para $h=3$, la división estacional presentó un RMSE de 0,938, inferior al obtenido mediante el suavizado de Kalman en un modelo estructural (1,067), mientras que para $h=12$ los resultados fueron 0,783 y 0,743, respectivamente.
 
-En cuanto a Prophet, que se ajusta directamente sobre la serie con datos faltantes y, por lo tanto, no requiere una etapa previa de imputación, se obtuvieron RMSE de 0,919, 0,803 y 0,638 para $h=3$, $h=6$ y $h=12$, respectivamente. Para el horizonte de corto plazo, su desempeño fue inferior al mejor resultado obtenido con ARIMA (0,871), aunque superior al mejor resultado de ETS (0,938). En cambio, para $h=6$ y $h=12$, Prophet presentó menores errores que los obtenidos con ARIMA y ETS a partir de las series imputadas.
+En cuanto a Prophet, que se ajusta directamente sobre la serie con datos faltantes y, por lo tanto, no requiere una etapa previa de imputación, se obtuvieron RMSE de 0,919, 0,803 y 0,638 para $h=3$, $h=6$ y $h=12$, respectivamente. Para el horizonte de corto plazo, tuvo un peor desempeño que ARIMA (0,871), aunque superior al mejor resultado de ETS (0,938). En cambio, para $h=6$ y $h=12$, Prophet presentó menores errores que los obtenidos con ARIMA y ETS a partir de las series imputadas.
 
 En conjunto, estos resultados muestran que el método con menor error de imputación no necesariamente produce los mejores pronósticos posteriores. Asimismo, la comparación con Prophet sugiere que, a medida que aumenta el horizonte de pronóstico, un modelo que trabaja directamente con la serie incompleta puede alcanzar un desempeño competitivo o incluso superior al obtenido mediante estrategias de imputación previa.
 
@@ -1768,7 +1848,7 @@ tabla %>%
 
 \newpage
 
-En el caso de 10 % de datos faltantes bajo el mecanismo MCAR en bloques, los métodos que aprovechan la estructura de la serie presentaron, en general, menores errores de imputación que los enfoques simples. El suavizado de Kalman en un modelo estructural obtuvo el menor RMSE de imputación (0,519), seguido por la división estacional (0,528) y la representación del espacio en estados de ARIMA y suavizado de Kalman (0,532). 
+En el caso de 10% de datos faltantes bajo el mecanismo MCAR en bloques, los métodos que aprovechan la estructura de la serie presentaron, en general, menores errores de imputación que los enfoques simples. El suavizado de Kalman en un modelo estructural obtuvo el menor RMSE de imputación (0,519), seguido por la división estacional (0,528) y la representación del espacio en estados de ARIMA y suavizado de Kalman (0,532). 
 
 Sin embargo, este orden no se replica al evaluar el desempeño predictivo. En el caso del modelo ARIMA y un horizonte de tres meses $(h=3)$, la división estacional presentó el menor RMSE (0,821), seguido por el suavizado de Kalman en un modelo estructural y por la representación del espacio en estados de ARIMA y suavizado de Kalman, que alcanzaron 0,862. Para $h=12$, en cambio, los tres métodos mostraron desempeños similares, con RMSE de 0,607, 0,610 y 0,612, respectivamente. 
 
@@ -1983,7 +2063,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-En el escenario MCAR en bloques con un 25 % de datos faltantes, los métodos que incorporan la estructura temporal de la serie presentaron los menores errores de imputación. El suavizado de Kalman en un modelo estructural obtuvo el menor RMSE (0,567), seguido por la división estacional (0,583) y la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,598). En contraste, los métodos simples mostraron errores más elevados, mientras que la interpolación spline presentó un RMSE particularmente alto (2,378), lo que refleja las dificultades de algunos métodos para reconstruir series con faltantes agrupados en bloques.
+En el escenario MCAR en bloques con un 25% de datos faltantes, los métodos que incorporan la estructura temporal de la serie presentaron los menores errores de imputación. El suavizado de Kalman en un modelo estructural obtuvo el menor RMSE (0,567), seguido por la división estacional (0,583) y la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,598). En contraste, los métodos simples mostraron errores más elevados, mientras que la interpolación spline presentó un RMSE particularmente alto (2,378), lo que refleja las dificultades de algunos métodos para reconstruir series con faltantes agrupados en bloques.
 
 Al evaluar el desempeño predictivo con ARIMA, el orden de los métodos difiere del observado en la imputación. La división estacional obtuvo los menores RMSE para los tres horizontes, con valores de 0,758, 0,753 y 0,647 para $h=3$, $h=6$ y $h=12$, respectivamente. Por lo tanto, aunque el suavizado de Kalman en un modelo estructural fue el método más preciso para reconstruir los valores faltantes, la división estacional condujo a mejores pronósticos. Con ETS se observa un patrón similar: la división estacional presentó los menores errores para los tres horizontes, con RMSE de 1,013, 0,825 y 0,664, respectivamente.
 
@@ -2196,13 +2276,13 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-Cuando la proporción de datos faltantes en bloques aumenta al 40 %, el suavizado de Kalman en un modelo estructural vuelve a presentar el menor error de imputación, con un RMSE de 0,567. Le siguen la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,606) y la división estacional (0,622). Por su parte, la interpolación spline presenta un error considerablemente mayor (2,695), lo que evidencia sus dificultades en este escenario de faltantes agrupados. En términos generales, los métodos que aprovechan la estructura temporal mostraron una mejor capacidad de reconstrucción que los enfoques simples.
+Cuando la proporción de datos faltantes en bloques aumenta al 40%, el suavizado de Kalman en un modelo estructural vuelve a presentar el menor error de imputación, con un RMSE de 0,567. Le siguen la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,606) y la división estacional (0,622). Por su parte, la interpolación spline presenta un error considerablemente mayor (2,695), lo que evidencia sus dificultades en este escenario de faltantes agrupados. En términos generales, los métodos que aprovechan la estructura temporal mostraron una mejor capacidad de reconstrucción que los enfoques simples.
 
 Los resultados predictivos con ARIMA no reproducen exactamente este orden. Para $h=3$, la división estacional obtuvo el menor RMSE (0,881), mientras que para $h=6$ y $h=12$ el mejor desempeño correspondió al suavizado de Kalman en un modelo estructural, con valores de 0,852 y 0,739, respectivamente. Con ETS, la división estacional presentó los menores errores para $h=3$ y $h=6$, con RMSE de 0,967 y 0,888. Para $h=12$, el menor error correspondió al suavizado de Kalman en un modelo estructural (0,761), aunque la división estacional alcanzó un valor prácticamente idéntico (0,762).
 
 Estos resultados muestran que la relación entre el error de imputación y el desempeño predictivo continúa dependiendo del modelo utilizado y del horizonte de pronóstico. En particular, el suavizado de Kalman en un modelo estructural, que fue el mejor método de imputación, no fue el más preciso en todos los horizontes. La división estacional presentó una ventaja en los pronósticos de corto plazo con ARIMA y en los de corto y mediano plazo con ETS.
 
-En cuanto a Prophet, sus RMSE fueron 0,959, 0,810 y 0,641 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h=3$, su error fue ligeramente inferior al mejor resultado de ETS (0,967), aunque superior al de ARIMA (0,881). En los horizontes de seis y doce meses, Prophet superó a los mejores resultados de ambos modelos que requieren imputación previa. Por lo tanto, en este escenario de elevada pérdida de información agrupada, Prophet constituye una alternativa competitiva, particularmente para horizontes más largos.
+En cuanto a Prophet, sus RMSE fueron 0,959, 0,810 y 0,641 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h=3$, su error fue menor al mejor resultado de ETS (0,967), aunque superior al de ARIMA (0,881). En los horizontes de seis y doce meses, Prophet superó a los mejores resultados de ambos modelos que requieren imputación previa. Por lo tanto, en este escenario de elevada pérdida de información agrupada, Prophet constituye una alternativa competitiva, particularmente para horizontes más largos.
 
 ### Datos faltantes al azar (MAR)
 
@@ -2411,9 +2491,9 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-En el escenario MAR con 10 % de datos faltantes, la descomposición estacional presentó el menor error de imputación, con un RMSE de 0,479, seguida por el suavizado de Kalman en un modelo estructural (0,508) y la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,525). Entre los enfoques simples, las interpolaciones lineal y de Stineman fueron las más precisas (0,784 en ambos casos), mientras que el reemplazo por un valor definido y por la moda mostraron los errores más elevados (10,976 y 2,715, respectivamente). De este modo, los métodos que incorporan la estructura temporal de la serie volvieron a superar claramente a los enfoques simples.
+En el escenario MAR con 10% de datos faltantes, la descomposición estacional presentó el menor error de imputación, con un RMSE de 0,479, seguida por el suavizado de Kalman en un modelo estructural (0,508) y la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,525). Entre los enfoques simples, las interpolaciones lineal y de Stineman fueron las más precisas (0,784 en ambos casos), mientras que el reemplazo por un valor definido y por la moda mostraron los errores más elevados (10,976 y 2,715, respectivamente). De este modo, los métodos que incorporan la estructura temporal de la serie volvieron a superar claramente a los enfoques simples.
 
-Sin embargo, este orden no se reproduce al evaluar el desempeño predictivo. Con ARIMA, la división estacional obtuvo el menor RMSE para $h = 3$ (0,817) y $h = 6$ (0,718), seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,841) en el primer caso y por la descomposición estacional (0,724) en el segundo. Para $h=12$, la descomposición estacional y el suavizado de Kalman en un modelo estructural empataron en el menor error (0,601), con la división estacional muy próxima (0,607). Con ETS, el método de última observación trasladada hacia adelante presentó el menor RMSE para $h=3$ y $h=6$ (1,009 y 0,838), mientras que para ℎ = 12 el mejor desempeño correspondió a la división estacional (0,666), seguida por la representación del espacio en estados de ARIMA con suavizado de Kalman (0,672) y la descomposición estacional (0,673).
+Sin embargo, este orden no se reproduce al evaluar el desempeño predictivo. Con ARIMA, la división estacional obtuvo el menor RMSE para $h = 3$ (0,817) y $h = 6$ (0,718), seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,841) en el primer caso y por la descomposición estacional (0,724) en el segundo. Para $h=12$, la descomposición estacional y el suavizado de Kalman en un modelo estructural empataron en el menor error (0,601), con la división estacional muy próxima (0,607). Con ETS, el método de última observación trasladada hacia adelante presentó el menor RMSE para $h=3$ y $h=6$ (1,009 y 0,838), mientras que para $h=12$ el mejor desempeño correspondió a la división estacional (0,666), seguida por la representación del espacio en estados de ARIMA con suavizado de Kalman (0,672) y la descomposición estacional (0,673).
 
 Por su parte, Prophet, ajustado directamente sobre la serie incompleta, obtuvo RMSE de 0,822, 0,764 y 0,632 para $h=3$, $h=6$ y $h=12$, respectivamente. En los tres horizontes su error fue mayor que el mejor resultado de ARIMA (0,817, 0,718 y 0,601), pero menor que el mejor resultado de ETS (1,009, 0,838 y 0,666).
 
@@ -2628,7 +2708,7 @@ Con 25% de datos faltantes bajo el mecanismo MAR, el suavizado de Kalman en un m
 
 En cuanto al pronóstico con ARIMA, la división estacional obtuvo el menor RMSE para $h=3$ (0,818), seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,869) y el suavizado de Kalman en un modelo estructural (0,877). Para $h=6$ y $h=12$, en cambio, el mejor desempeño correspondió al suavizado de Kalman en un modelo estructural (0,766 y 0,659), con la división estacional y la descomposición estacional a continuación. Con ETS, la división estacional presentó el menor RMSE en los tres horizontes (1,038, 0,852 y 0,698). Para $h=3$, la última observación trasladada hacia adelante quedó en segundo lugar (1,047), mientras que para $h=6$ y $h=12$ los segundos puestos correspondieron a los métodos basados en Kalman, con diferencias mínimas entre sí.
 
-Prophet obtuvo RMSE de 0,875, 0,777 y 0,635 para $h=3$, $h=6$ y $h=12$. Para los dos primeros horizontes, su error fue mayor que el mejor resultado de ARIMA (0,818 y 0,766), aunque menor que el de ETS (1,038 y 0,852). Para ℎ = 12, en cambio, su RMSE fue menor que el de ambos modelos (0,659 con ARIMA y 0,698 con ETS).
+Prophet obtuvo RMSE de 0,875, 0,777 y 0,635 para $h=3$, $h=6$ y $h=12$. Para los dos primeros horizontes, su error fue mayor que el mejor resultado de ARIMA (0,818 y 0,766), aunque menor que el de ETS (1,038 y 0,852). Para $h=12$, en cambio, su RMSE fue menor que el de ambos modelos (0,659 con ARIMA y 0,698 con ETS).
 
 En síntesis, el suavizado de Kalman en un modelo estructural fue el mejor método de imputación y también el mejor con ARIMA para los horizontes de seis y doce meses, pero no para el corto plazo, donde la división estacional resultó superior. Con ETS, la división estacional fue la mejor alternativa en todos los horizontes. Prophet vuelve a mostrar su mayor competitividad en el horizonte más largo.
 
@@ -2837,9 +2917,9 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-Cuando la proporción de datos faltantes bajo el mecanismo MAR asciende a 40%, el suavizado de Kalman en un modelo estructural presentó el menor error de imputación con un RMSE de 0,566, seguido por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,620) y la división estacional (0,650). Cabe destacar que la descomposición estacional, que había sido el método más preciso con 10 % de faltantes (0,479), se deteriora de manera notoria a medida que aumenta la pérdida de información, mientras que el suavizado de Kalman en un modelo estructural se mantiene relativamente estable (de 0,508 a 0,566). Las interpolaciones lineal y de Stineman, los mejores enfoques simples, alcanzaron RMSE de 0,952 y 0,958.
+Cuando la proporción de datos faltantes bajo el mecanismo MAR asciende a 40%, el suavizado de Kalman en un modelo estructural presentó el menor error de imputación con un RMSE de 0,566, seguido por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,620) y la división estacional (0,650). Cabe destacar que la descomposición estacional, que había sido el método más preciso con 10% de faltantes (0,479), se deteriora de manera notoria a medida que aumenta la pérdida de información, mientras que el suavizado de Kalman en un modelo estructural se mantiene relativamente estable (de 0,508 a 0,566). Las interpolaciones lineal y de Stineman, los mejores enfoques simples, alcanzaron RMSE de 0,952 y 0,958.
 
-Con ARIMA, la división estacional obtuvo el menor RMSE para $h=3$ (0,872), seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,931) y el suavizado de Kalman en un modelo estructural (0,964). Para $h=6$ y $h=12$, el suavizado de Kalman en un modelo estructural presentó el mejor desempeño (0,842 y 0,731). Con ETS se observa un patrón análogo: la división estacional fue el mejor método para $h=3$ (0,971), mientras que el suavizado de Kalman en un modelo estructural lo fue para $h=6$ y $h=12$ (0,870 y 0,736). A diferencia de lo observado con 10 % de faltantes, la última observación trasladada hacia adelante deja de liderar los pronósticos de corto plazo con ETS (1,159 para $h=3$).
+Con ARIMA, la división estacional obtuvo el menor RMSE para $h=3$ (0,872), seguida por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,931) y el suavizado de Kalman en un modelo estructural (0,964). Para $h=6$ y $h=12$, el suavizado de Kalman en un modelo estructural presentó el mejor desempeño (0,842 y 0,731). Con ETS se observa un patrón análogo: la división estacional fue el mejor método para $h=3$ (0,971), mientras que el suavizado de Kalman en un modelo estructural lo fue para $h=6$ y $h=12$ (0,870 y 0,736). A diferencia de lo observado con 10% de faltantes, la última observación trasladada hacia adelante deja de liderar los pronósticos de corto plazo con ETS (1,159 para $h=3$).
 
 En cuanto a Prophet, se obtuvieron RMSE de 0,935, 0,800 y 0,647 para $h=3$, $h=6$ y $h=12$, respectivamente. Para $h= 3$, su error fue mayor que el mejor resultado de ARIMA (0,872), aunque menor que el de ETS (0,971). Para $h=6$ y $h=12$, en cambio, Prophet presentó menores errores que los mejores resultados de ambos modelos con imputación previa (0,842 y 0,870 para $h=6$; 0,731 y 0,736 para $h=12$).
 
@@ -3052,13 +3132,13 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-En el escenario MNAR con un 10 % de datos faltantes, el suavizado de Kalman en un modelo estructural presentó el menor error de imputación, con un RMSE de 0,774. A continuación, se ubicaron la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,787) y la descomposición estacional (0,788), obteniendo resultados muy similares. Los métodos basados en valores constantes, como el reemplazo por un valor definido o por la moda, mostraron errores considerablemente superiores. De este modo, los métodos que aprovechan la estructura temporal volvieron a destacarse en la reconstrucción de las observaciones faltantes.
+En el escenario MNAR con un 10% de datos faltantes, el suavizado de Kalman en un modelo estructural presentó el menor error de imputación, con un RMSE de 0,774. A continuación, se ubicaron la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,787) y la descomposición estacional (0,788), obteniendo resultados muy similares. Los métodos basados en valores constantes, como el reemplazo por un valor definido o por la moda, mostraron errores considerablemente superiores. De este modo, los métodos que aprovechan la estructura temporal volvieron a destacarse en la reconstrucción de las observaciones faltantes.
 
-Sin embargo, el ranking cambia al considerar los pronósticos. Con ARIMA, el método que utiliza la división estacional obtuvo el menor RMSE para $h=3$, con un valor de 0,935. Tanto para $h=6$ como para $h=12$, la descomposición estacional presentó el menor error (0,796 y 0,659 respectivamente). Por su parte, con ETS, LOCF presentó el menor error para $h=3$ , con un valor de 1,111. Para $h=6$ y $h=12$, el mejor desempeño correspondió a la división estacional, con valores de RMSE iguales a 0,892 y 0,704 respectivamente.
+Sin embargo, el ranking cambia al considerar los pronósticos. Con ARIMA, el método que utiliza la división estacional obtuvo el menor RMSE para $h=3$, con un valor de 0,935. Tanto para $h=6$ como para $h=12$, la descomposición estacional presentó el menor error (0,796 y 0,659 respectivamente). Por su parte, con ETS, LOCF presentó el menor error para $h=3$, con un valor de 1,111. Para $h=6$ y $h=12$, el mejor desempeño correspondió a la división estacional, con valores de RMSE iguales a 0,892 y 0,704 respectivamente.
 
 La comparación evidencia que el método con mejor precisión de imputación no es necesariamente el más conveniente para el pronóstico posterior. En este caso, el suavizado de Kalman en un modelo estructural fue la mejor alternativa para reconstruir los datos, pero los métodos de división estacional y descomposición estacional obtuvieron los mejores resultados en varios de los escenarios predictivos. Asimismo, el método seleccionado varió según el horizonte y el modelo utilizado.
 
-Prophet presentó RMSE de 0,958, 0,813 y 0,643 para $h=3$, $h=6$ y $h=12$, respectivamente. Para los horizontez de tres y seis meses, su error fue superior a los mejores resultados de ARIMA (0,935 y 0,796), pero inferior a ETS (1,111 y 0,892). En cambio, para el horizonte de doce meses, Prophet presentó errores inferiores a los mejores resultados de ARIMA (0,659) y de con ETS (0,704). Así, su desempeño fue especialmente competitivo frente a ETS, aunque no superó sistemáticamente a ARIMA.
+Prophet presentó RMSE de 0,958, 0,813 y 0,643 para $h=3$, $h=6$ y $h=12$, respectivamente. Para los horizontes de tres y seis meses, su error fue superior a los mejores resultados de ARIMA (0,935 y 0,796), pero inferior a ETS (1,111 y 0,892). En cambio, para el horizonte de doce meses, Prophet presentó errores inferiores a los mejores resultados de ARIMA (0,659) y de ETS (0,704). Así, su desempeño fue especialmente competitivo frente a ETS, aunque no superó sistemáticamente a ARIMA.
 
 ```{r tabla41}
 #| tbl-cap: "Desempeño de los métodos de imputación según RMSE, MAE y MAPE. Escenario MNAR con 25% de datos faltantes."
@@ -3265,7 +3345,7 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-Al aumentar la proporción de faltantes MNAR al 25 %, el suavizado de Kalman en un modelo estructural volvió a presentar el menor error de imputación, con un RMSE de 0,732. Le siguieron la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,741) y la división estacional (0,824). En contraste, los métodos simples conservaron errores elevados, especialmente el reemplazo por un valor definido y la moda. Estos resultados indican que los métodos basados en la estructura temporal mantuvieron una ventaja en la reconstrucción de los datos bajo este mecanismo de ausencia.h
+Al aumentar la proporción de faltantes MNAR al 25%, el suavizado de Kalman en un modelo estructural volvió a presentar el menor error de imputación, con un RMSE de 0,732. Le siguieron la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,741) y la división estacional (0,824). En contraste, los métodos simples conservaron errores elevados, especialmente el reemplazo por un valor definido y la moda. Estos resultados indican que los métodos basados en la estructura temporal mantuvieron una ventaja en la reconstrucción de los datos bajo este mecanismo de ausencia.h
 
 Al considerar el desempeño predictivo con ARIMA, el suavizado de Kalman en un modelo estructural obtuvo el menor RMSE tanto para los tres casos, con un RMSE de 1,179 para $h=3$, de 0,974 para $h=6$ y para $h=12$ el valor resultó igual a 0,804. En los tres distintos horizontes, el segundo metodo con menor valor de RMSE fue la representación del espacio en estados de ARIMA y suavizado de Kalman, con valores iguales a 1,189, 1,010 y 0,840 respectivamente.
 
@@ -3480,35 +3560,37 @@ tabla %>%
   row_spec(0, bold = TRUE)
 ```
 
-En el escenario MNAR con un 40 % de datos faltantes, el suavizado de Kalman en un modelo estructural obtuvo el menor RMSE de imputación (0,726), seguido por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,740) y por la división estacional (0,854). Los enfoques simples también mostraron errores importantes, especialmente el reemplazo por un valor definido y la moda. En conjunto, los métodos temporales mantuvieron un mejor desempeño relativo para reconstruir las observaciones ausentes.
+En el escenario MNAR con un 40% de datos faltantes, el suavizado de Kalman en un modelo estructural obtuvo el menor RMSE de imputación (0,726), seguido por la representación en el espacio de estados de ARIMA con suavizado de Kalman (0,740) y por la división estacional (0,854). Los enfoques simples también mostraron errores importantes, especialmente el reemplazo por un valor definido y la moda. En conjunto, los métodos temporales mantuvieron un mejor desempeño relativo para reconstruir las observaciones ausentes.
 
 Los resultados de ARIMA muestran que el método más conveniente no cambia según el horizonte, siendo el suavizado de Kalman en un modelo estructural el que mejor resultados obtuvo. Para $h=3$, el RMSE resultó igual a 1,359; para $h=6$, igual a 1,099; y para $h=12$, presentó un valor de 0,921. De igual manera, en el caso de ETS, el suavizado de Kalman en un modelo estructural obtuvo los menores RMSE para $h=3$, $h=6$ y $h=12$, con valores de 1,379, 1,104 y 0,913, respectivamente. Para ambos modelos de pronóstico y para todos los horizontes planteados, el segundo método de imputación con menores valores de RMSE fue la representación del espacio en estados de ARIMA y suavizado de Kalman.
 
 Estos resultados muestran que, al igual que en el caso de un 25% de datos faltantes, los métodos que mejor reconstruyen los datos son también los que producen los pronósticos más precisos.
 
-Finalmente, Prophet obtuvo RMSE de 1,367, 1,069 y 0,841 para $h=3$, $h=6$ y $h=12$, respectivamente. Para los dos primeros horizontes, sus errores fueron ligeramente superiores a los mejores resultados de ARIMA (1,359 y 1,099), mientras que para $h=12$ Prophet obtuvo un RMSE menor al mejor resultado de ARIMA (0,921). En comparación con ETS, Prophet presentó menores errores en los tres horizontes. En consecuencia, incluso con un 40 % de datos faltantes, ajustar un modelo directamente sobre la serie incompleta puede constituir una alternativa competitiva frente a la imputación previa, aunque no necesariamente supera a los mejores resultados de ARIMA.
+Finalmente, Prophet obtuvo RMSE de 1,367, 1,069 y 0,841 para $h=3$, $h=6$ y $h=12$, respectivamente. Para el primer horizonte, su error fue ligeramente superior al mejor resultado de ARIMA (1,359), mientras que para $h=6$ y $h=12$ Prophet obtuvo un RMSE menor al mejor resultado de ARIMA (1,099 y 0,921). En comparación con ETS, Prophet presentó menores errores en los tres horizontes. En consecuencia, incluso con un 40% de datos faltantes, ajustar un modelo directamente sobre la serie incompleta puede constituir una alternativa competitiva frente a la imputación previa, aunque no necesariamente supera a los mejores resultados de ARIMA.
 
 ## Comparación entre los mecanismos
 
-Para facilitar la comparación entre la calidad de la imputación y el desempeño predictivo posterior, se sintetizan los métodos que obtuvieron el menor RMSE promedio en cada escenario. Las @tbl-resumen-arima y @tbl-resumen-ets presentan los resultados de los modelos ARIMA y ETS, respectivamente, para horizontes de tres, seis y doce meses.
+Para facilitar la comparación entre la calidad de la imputación y el desempeño predictivo posterior, se sintetizan los métodos que obtuvieron el menor RMSE promedio en cada escenario. En la @tbl-resumen-arima y en la @tbl-resumen-ets se presentan los resultados de los modelos ARIMA y ETS, respectivamente, para horizontes de tres, seis y doce meses.
 
 ```{r}
 resumen_rmse <- data.frame(
   Escenario = c(
-    "MCAR, 10 %",
-    "MCAR, 25 %",
-    "MCAR, 40 %",
-    "MCAR en bloques, 10 %",
-    "MCAR en bloques, 25 %",
-    "MCAR en bloques, 40 %",
-    "MAR, 10 %",
-    "MAR, 25 %",
-    "MAR, 40 %",
-    "MNAR, 10 %",
-    "MNAR, 25 %",
-    "MNAR, 40 %"
+    "Serie completa, sin faltantes",
+    "MCAR, 10%",
+    "MCAR, 25%",
+    "MCAR, 40%",
+    "MCAR en bloques, 10%",
+    "MCAR en bloques, 25%",
+    "MCAR en bloques, 40%",
+    "MAR, 10%",
+    "MAR, 25%",
+    "MAR, 40%",
+    "MNAR, 10%",
+    "MNAR, 25%",
+    "MNAR, 40%"
   ),
   `Imputación` = c(
+    "-",
     "Descomp. est. (0,497)",
     "Kalman estruct. (0,542)",
     "Kalman estruct. (0,568)",
@@ -3523,6 +3605,7 @@ resumen_rmse <- data.frame(
     "Kalman estruct. (0,726)"
   ),
   `ARIMA h=3` = c(
+    "0,858",
     "División est. (0,833)",
     "División est. (0,798)",
     "División est. (0,871)",
@@ -3537,6 +3620,7 @@ resumen_rmse <- data.frame(
     "Kalman estruct. (1,359)"
   ),
   `ARIMA h=6` = c(
+    "0,718",
     "División est. (0,730)",
     "Kalman estruct. (0,756)",
     "Kalman estruct. (0,851)",
@@ -3551,6 +3635,7 @@ resumen_rmse <- data.frame(
     "Kalman estruct. (1,099)"
   ),
   `ARIMA h=12` = c(
+    "0,585",
     "Descomp. est. (0,601)",
     "Kalman estruct. (0,649)",
     "Descomp. est. (0,738)",
@@ -3565,6 +3650,7 @@ resumen_rmse <- data.frame(
     "Kalman estruct. (0,921)"
   ),
   `ETS h=3` = c(
+    "1,041",
     "LOCF (0,996)",
     "LOCF (0,970)",
     "División est. (0,938)",
@@ -3579,6 +3665,7 @@ resumen_rmse <- data.frame(
     "Kalman estruct. (1,379)"
   ),
   `ETS h=6` = c(
+    "0,833",
     "LOCF (0,833)",
     "División est. (0,844)",
     "Kalman estruct. (0,883)",
@@ -3593,6 +3680,7 @@ resumen_rmse <- data.frame(
     "Kalman estruct. (1,104)"
   ),
   `ETS h=12` = c(
+    "0,660",
     "División est. (0,659)",
     "División est. (0,690)",
     "Kalman estruct. (0,743)",
@@ -3629,7 +3717,6 @@ kable(resumen_arima,
       align = "llccc") %>% 
   
   kable_styling(latex_options = "scale_down") %>%
-  add_header_above(c(" " = 2, "ARIMA" = 3), bold = TRUE) %>%
   column_spec(1, width = "5cm") %>%
   column_spec(2, width = "4.5cm") %>%
   row_spec(0, bold = TRUE)
@@ -3654,15 +3741,14 @@ kable(resumen_ets,
       align = "llccc") %>% 
   
   kable_styling(latex_options = "scale_down") %>%
-  add_header_above(c(" " = 2, "ETS" = 3), bold = TRUE) %>%
   column_spec(1, width = "5cm") %>%
   column_spec(2, width = "4.5cm") %>%
   row_spec(0, bold = TRUE)
 ``` 
 
-La comparación de los resultados muestra que no existe una correspondencia sistemática entre el método con menor error de imputación y el que alcanza el mejor desempeño predictivo: considerando los doce escenarios, los dos modelos y los tres horizontes (72 combinaciones), ambos coinciden en 28 de ellas. En términos de imputación, el suavizado de Kalman en un modelo estructural presentó el menor RMSE en 10 de los 12 escenarios, mientras que la descomposición estacional lo hizo únicamente con 10 % de faltantes bajo los mecanismos MCAR y MAR.
+La comparación de los resultados muestra que no existe una correspondencia sistemática entre el método con menor error de imputación y el que alcanza el mejor desempeño predictivo: considerando los doce escenarios, los dos modelos y los tres horizontes (72 combinaciones), ambos coinciden en 28 de ellas y queda entre los tres mejores en 58 casos. En términos de imputación, el suavizado de Kalman en un modelo estructural presentó el menor RMSE en 10 de los 12 escenarios, mientras que la descomposición estacional lo hizo únicamente con 10% de faltantes bajo los mecanismos MCAR y MAR.
 
-En cuanto al pronóstico, esta ventaja no se traslada de manera uniforme. Para ℎ = 3, la división estacional presentó el menor error con ARIMA en 10 de los 12 escenarios y fue, sola o en empate, la mejor con ETS en 6 de ellos. Con ARIMA y ℎ = 6, el suavizado de Kalman en un modelo estructural fue el mejor método en 7 de los 8 escenarios con 25 % o 40 % de faltantes, y en ningún escenario con 10 %. Por su parte, LOCF resulta competitivo con ETS en el corto plazo: fue el método con menor error para ℎ = 3 en cuatro escenarios (MCAR con 10 y 25 %, MAR con 10 % y MNAR con 10 %), todos con faltantes dispersos y una pérdida de información baja o moderada, y nunca con 40 % de faltantes ni con faltantes en bloques. La única situación en la que el mejor método de imputación también domina los pronósticos de ambos modelos en todos los horizontes es MNAR con 25 % y 40 % de faltantes, donde el suavizado de Kalman en un modelo estructural resultó el mejor en las seis combinaciones; con 10 % de faltantes bajo MNAR, en cambio, no hubo coincidencia en ninguna de ellas.
+En cuanto al pronóstico, esta ventaja no se traslada de manera uniforme. Para $h=3$, la división estacional presentó el menor error con ARIMA en 10 de los 12 escenarios y fue, sola o en empate, la mejor con ETS en 6 de ellos. Con ARIMA y $h=6$, el suavizado de Kalman en un modelo estructural fue el mejor método en 7 de los 8 escenarios con 25% o 40% de faltantes, y en ningún escenario con 10%. Por su parte, LOCF resulta competitivo con ETS en el corto plazo: fue el método con menor error para $h=3$ en cuatro escenarios (MCAR con 10 y 25%, MAR con 10% y MNAR con 10%), todos con faltantes dispersos y una pérdida de información baja o moderada, y nunca con 40% de faltantes ni con faltantes en bloques. La única situación en la que el mejor método de imputación también domina los pronósticos de ambos modelos en todos los horizontes es MNAR con 25% y 40% de faltantes, donde el suavizado de Kalman en un modelo estructural resultó el mejor en las seis combinaciones; con 10% de faltantes bajo MNAR, en cambio, no hubo coincidencia en ninguna de ellas.
 
 Estos patrones indican que la selección de un método de imputación debería considerar no solo su capacidad para reconstruir los valores faltantes, sino también el modelo de pronóstico, el horizonte de interés y la proporción de datos faltantes.
 
